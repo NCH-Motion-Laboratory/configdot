@@ -90,10 +90,16 @@ Output:
 
 ## Miscellaneous notes
 
+The INI parser supports multiline definitions, i.e. you can write:
+
+    [foo]
+    bar = [1,
+           2,
+           3]
 
 configdot supports nested configuration objects (sections inside sections), but this is not yet implemented in the INI file parser.
 
-configdot works for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
+configdot should work for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
 
 
 
