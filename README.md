@@ -5,7 +5,7 @@ configdot provides a config object and INI file parser for configuration of Pyth
 * The INI file entries are parsed by `ast.literal_eval()`, so several Python types (such as tuples, lists, and dicts) can be directly defined in the INI file.
 * Instead of the dict syntax `config['section']['item']`, configdot supports attribute access, so you can write `config.section.item` instead.
 
-## Quick example
+## Basic usage
 
 Given the `demo.ini` file below:
 ```
@@ -42,6 +42,53 @@ Output:
 You can also modify items directly by the attribute syntax:
 
     config.food.cost = 20
+
+## There's more
+
+You can get INI file comments for a section: 
+
+    config.food._comment
+
+Output:
+
+    'The food section'
+
+You can also get comments for the items. They should be on the line preceding the item definition. To get a comment for an item, you need to use the dict-like syntax:
+
+    config.food['cost']._comment
+
+To update values in a config using another:
+
+    configdot.update_config(config, config_new)
+
+This can be useful e.g. to update a global config with some user-defined values.
+  
+You can dump the config item as text:
+
+    print(configdot.dump_config(config))
+
+Output:
+
+    # The food section
+    [food]
+    # 
+    calories = {'Apple': 50, 'Banana': 100}
+    # this is the cost of the recipe in euros
+    cost = 10
+    # 
+    fruits = ['Apple', 'Banana', 'Kiwi']
+    # 
+    recipe = 'Fruit salad'
+
+
+
+
+
+
+
+
+
+
 
     
     
