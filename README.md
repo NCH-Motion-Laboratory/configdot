@@ -90,12 +90,12 @@ Output:
 
 ## Miscellaneous notes
 
-The INI parser supports multiline definitions, i.e. you can write:
+The INI parser supports multiline definitions, i.e. you can write something like:
 
     [foo]
-    bar = [1,
-           2,
-           3]
+    bar = [[1, 0, 0],
+           [0, 1, 0],
+           [0, 0, 1]]
 
 configdot supports nested configuration objects (sections inside sections), but this is not yet implemented in the INI file parser.
 
