@@ -46,9 +46,3 @@ You can also modify items directly by the attribute syntax:
 Comments can be read from the INI file:
 
     configdot.get_description(config.food)
-
-
-
-
-```
-
