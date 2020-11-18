@@ -1,0 +1,2 @@
+global-exclude *.py[co]
+global-exclude __pycache__
