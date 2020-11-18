@@ -43,7 +43,7 @@ You can also modify items directly by the attribute syntax:
 
     config.food.cost = 20
 
-Descriptions can be read from the INI file:
+Comments can be read from the INI file:
 
     configdot.get_description(config.food)
 
