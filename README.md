@@ -61,6 +61,10 @@ You can also get comments for the items. In the INI file, they should be placed 
 
     config.food['cost']._comment
 
+Output:
+    
+    'this is the cost of the recipe in euros'
+    
 To update values in a config instance using another instance:
 
     configdot.update_config(config, config_new)
