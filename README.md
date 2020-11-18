@@ -23,7 +23,7 @@ You can load it by:
     import configdot
     config = configdot.parse_config('demo.ini')
 
-To get a section (a `ConfigContainer` instance):
+To get a section:
 
     config.food
 
@@ -53,17 +53,17 @@ Output:
 
     'The food section'
 
-You can also get comments for the items. They should be on the line preceding the item definition. To get a comment for an item, you need to use the dict-like syntax:
+You can also get comments for the items. In the INI file, they should be placed on the line preceding the item definition. To get a comment for an item, you need to use the dict-like syntax:
 
     config.food['cost']._comment
 
-To update values in a config using another:
+To update values in a config instance using another instance:
 
     configdot.update_config(config, config_new)
 
 This can be useful e.g. to update a global config with some user-defined values.
   
-You can dump the config item as text:
+Finally, you can dump the config item as text:
 
     print(configdot.dump_config(config))
 
@@ -79,6 +79,13 @@ Output:
     fruits = ['Apple', 'Banana', 'Kiwi']
     # 
     recipe = 'Fruit salad'
+
+## Miscellaneous notes
+
+
+configdot supports nested configuration objects (sections inside sections), but this is not yet implemented in the INI file parser.
+
+configdot works for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
 
 
 
