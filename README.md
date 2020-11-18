@@ -7,7 +7,7 @@ configdot provides a config object and INI file parser for configuration of Pyth
 
 ## Basic usage
 
-Given the `demo.ini` file below:
+Given the silly `demo.ini` file below:
 ```
 # The food section
 [food]
@@ -16,6 +16,10 @@ calories = {'Apple': 50, 'Banana': 100}
 recipe = 'Fruit salad'
 # this is the cost of the recipe in euros
 cost = 10
+
+# The drinks section
+[drinks]
+favorite = 'Coke'
 ```
 
 You can load it by:
