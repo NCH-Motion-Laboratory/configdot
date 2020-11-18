@@ -6,6 +6,12 @@ from .configdot import (
     ConfigItem,
     update_config,
     dump_config,
+    get_description,
 )
 
 logging.getLogger('configdot').addHandler(logging.NullHandler())
+
+
+
+
+
