@@ -43,7 +43,7 @@ You can directly get the items under a section by attribute access:
 
     config.food.calories
 
-Output:
+The output is a Python dict:
 
     {'Apple': 50, 'Banana': 100}
 
