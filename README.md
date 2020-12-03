@@ -1,6 +1,6 @@
 # configdot
 
-configdot is a minimalistic library provides a config object and INI file parser for configuration of Python programs. Compared to modules such as `ConfigParser` and `ConfigObj`, the benefits are:
+configdot is a minimalistic library providing a config object and INI file parser for configuration of Python programs. Compared to modules such as `ConfigParser` and `ConfigObj`, the benefits are:
 
 * The INI file entries are evaluated as Python expressions by `ast.literal_eval()`, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
 * Instead of the dict syntax `config['section']['item']`, configdot supports attribute access, so you can write `config.section.item` instead.
