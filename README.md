@@ -55,7 +55,7 @@ You can also modify items directly by the attribute syntax:
 
 `ConfigContainer` instances support the iteration protocol. You can get the section names and sections from a config as follows:
 
-    for secname, section in config:
+    for section_name, section in config:
         print(section_name)
 
 The sections are also `ConfigContainer` instances, so they can be iterated over. This will give you the config items and their names:
