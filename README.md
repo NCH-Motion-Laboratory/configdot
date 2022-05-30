@@ -51,9 +51,21 @@ You can also modify items directly by the attribute syntax:
 
     config.food.cost = 20
 
-## There's more
+## Getting sections and items from a config
 
-You can get INI file comments for a section: 
+ConfigContainers support the iteration protocol. You can get the section names and sections from a config as follows:
+
+    for secname, section in config:
+        print(section_name)
+
+The sections are also ConfigContainer instances, so they can be iterated over. This will give you the config items and their names:
+
+    for item_name, item in section:
+        print(item_name)
+
+## Getting comments
+
+You can get INI file comments for a section as follows:
 
     config.food._comment
 
@@ -69,6 +81,8 @@ Output:
     
     'this is the cost of the recipe in euros'
     
+## Updating and dumping a config
+
 To update values in a config instance using another instance:
 
     configdot.update_config(config, config_new)
@@ -106,15 +120,6 @@ configdot supports nested configuration objects (sections inside sections), but 
 configdot should work for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
 
 
-
-
-
-
-
-
-
-
-
-    
+  
     
     
