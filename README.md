@@ -53,12 +53,12 @@ You can also modify items directly by the attribute syntax:
 
 ## Getting sections and items from a config
 
-ConfigContainers support the iteration protocol. You can get the section names and sections from a config as follows:
+`ConfigContainer` instances support the iteration protocol. You can get the section names and sections from a config as follows:
 
     for secname, section in config:
         print(section_name)
 
-The sections are also ConfigContainer instances, so they can be iterated over. This will give you the config items and their names:
+The sections are also `ConfigContainer` instances, so they can be iterated over. This will give you the config items and their names:
 
     for item_name, item in section:
         print(item_name)
