@@ -2,7 +2,6 @@
 """
 
 Test the config interface
-FIXME: move tests to ulstools
 
 @author: jussi (jnu@iki.fi)
 """
@@ -12,7 +11,7 @@ import pytest
 import logging
 import re
 
-from ulstools.configdot import (
+from configdot.configdot import (
     parse_config,
     update_config,
     dump_config,
