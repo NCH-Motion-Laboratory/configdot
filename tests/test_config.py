@@ -17,6 +17,7 @@ from configdot.configdot import (
     dump_config,
     RE_COMMENT,
     RE_SECTION_HEADER,
+    RE_SUBSECTION_HEADER,
     RE_VAR_DEF,
     get_description,
     _parse_config,
@@ -84,6 +85,26 @@ def test_re_section_header():
     assert re.match(RE_SECTION_HEADER, s)
     s = '[nice-chars-only]'
     assert re.match(RE_SECTION_HEADER, s)
+
+
+def test_re_subsection_header():
+    sli = ['[[foo]]', ' [[foo]] ']
+    for s in sli:
+        assert re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[ foo]]'
+    assert not re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[some/invalid/chars]]'
+    assert not re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[foo]'
+    assert not re.match(RE_SUBSECTION_HEADER, s)
+    s = '[foo]]'
+    assert not re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[foo]]]'
+    assert not re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[nice_chars_only]]'
+    assert re.match(RE_SUBSECTION_HEADER, s)
+    s = '[[nice-chars-only]]'
+    assert re.match(RE_SUBSECTION_HEADER, s)
 
 
 def test_config():
