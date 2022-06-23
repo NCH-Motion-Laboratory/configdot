@@ -112,7 +112,7 @@ The INI file contains of section headers, subsection headers, items and comments
 
 Section headers are denoted as `[section]`. Subsection headers are written as `[[subsection]]`. Subsections must occur inside sections.
 
-Items are denoted as `item = value`. They must be valid Python expressions. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file.
+Item definitions must be written as `item_name = value`. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file.
 
 The expressions are parsed with `ast.literal_eval()`, with the associated limitations (e.g. no support for indexing). 
 
