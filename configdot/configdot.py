@@ -4,15 +4,11 @@ Parse INI files into nested config objects.
 
 @author: Jussi (jnu@iki.fi)
 """
-from __future__ import print_function
-
-from builtins import str
-from builtins import object
 import ast
 import re
 import pprint
 import logging
-
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +46,9 @@ def _is_whitespace(s):
 
 
 def _parse_var_def(s):
-    """Match (possibly partial) var definition. Return varname,
-    val tuple if successful"""
+    """Match (possibly partial) var definition.
+
+    Return varname, val tuple if successful"""
     m = re.match(RE_VAR_DEF, s)
     if m:
         varname, val = m.group(1).strip(), m.group(2).strip()
@@ -67,14 +64,27 @@ def _parse_section_header(s):
 
 
 def get_description(item_or_section):
-    """Returns a nice description based on section or item comment. This is not
-    implemented as an instance method to avoid polluting the class namespace"""
+    """Returns a description based on section or item comment.
+
+    Parameters
+    ----------
+    item_or_section : ConfigContainer | ConfigItem
+        Item or section.
+
+    Returns
+    -------
+    str
+        The description.
+
+    Note: not implemented as an instance method to avoid polluting the class
+    namespace.
+    """
     desc = item_or_section._comment
     # currently just capitalizes first letter of comment string
     return desc[:1].upper() + desc[1:]
 
 
-class ConfigItem(object):
+class ConfigItem:
     """Holds data for a config item"""
 
     def __init__(self, name=None, value=None, comment=None):
@@ -98,7 +108,7 @@ class ConfigItem(object):
         return f'{self.name} = {pprint.pformat(self.value)}'
 
 
-class ConfigContainer(object):
+class ConfigContainer:
     """Holds config items (ConfigContainer or ConfigItem instances)"""
 
     def __init__(self, items=None, comment=None):
@@ -120,8 +130,11 @@ class ConfigContainer(object):
             yield val
 
     def __getattr__(self, attr):
-        """Returns an item. For ConfigItem instances, the item value is
-        returned. This gets the value directly by the syntax section.item"""
+        """Returns an item by the syntax container.item.
+
+        If the item is a ConfigItem instance, return the item value instead.
+        This allows getting values directly.
+        """
         try:
             item = self._items[attr]
         except KeyError:
@@ -135,20 +148,21 @@ class ConfigContainer(object):
     def __setattr__(self, attr, value):
         """Set attribute"""
         if isinstance(value, ConfigItem) or isinstance(value, ConfigContainer):
-            # replace existing section/item
+            # replace an existing section/item
             self.__dict__['_items'][attr] = value
         elif attr == '_comment':
             self.__dict__['_comment'] = value
         elif attr in self._items:
-            # update value of existing item (by syntax sec.item = value)
+            # update value of existing item (syntax sec.item = value)
             self.__dict__['_items'][attr].value = value
         else:
-            # implicitly create a new ConfigItem
+            # implicitly create a new ConfigItem (syntax sec.item = value)
             self.__dict__['_items'][attr] = ConfigItem(name=attr, value=value)
 
     def __repr__(self):
         s = '<ConfigContainer|'
-        s += f' items: {str(self._items.keys())}'
+        s += ' items: '
+        s += ', '.join(f"'{key}'" for key in self._items.keys())
         s += '>'
         return s
 
@@ -163,22 +177,30 @@ def parse_config(fname, encoding=None):
     encoding : str
         The encoding to use. By default, open() uses the preferred encoding of
         the locale. On Windows, this is still cp1252 and not utf-8. If your
-        configuration files are in utf-8, specify encoding='utf-8'.
-        
+        configuration files are in utf-8 (as they probably will be), you need to
+        specify encoding='utf-8' to correctly read extended characters.
+
     Returns:
     -------
     ConfigContainer
         The config object.
     """
+    if encoding is None and sys.platform == 'win32':
+        logger.warning(
+            "On Windows, you need to explicitly specify encoding='utf-8' "
+            "if your config file is encoded with UTF-8."
+        )
     with open(fname, 'r', encoding=encoding) as f:
         lines = f.read().splitlines()
     return _parse_config(lines)
 
 
 def _parse_config(lines):
-    """Parse INI files into a ConfigContainer instance.
+    """Parse INI file lines into a ConfigContainer instance.
+
     Supports:
         -multiline variable definitions
+        -multiple comment lines per item/section
     Does not support:
         -inline comments (would be too confusing with multiline defs)
         -nested sections (though possible with ConfigContainer)
@@ -187,7 +209,7 @@ def _parse_config(lines):
     _comments = list()  # comments for current variable
     _def_lines = list()  # definition lines for current variable
     current_section = None
-    collecting_def = False
+    ongoing_def = False
     config = ConfigContainer()
 
     for lnum, li in enumerate(lines, 1):
@@ -199,8 +221,8 @@ def _parse_config(lines):
 
         # new section
         if secname:
-            if collecting_def:  # did not finish definition
-                raise ValueError('could not evaluate definition at line %d' % lnum)
+            if ongoing_def:  # did not finish previous definition
+                raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(_comments)
             current_section = ConfigContainer(comment=comment)
             setattr(config, secname, current_section)
@@ -208,14 +230,14 @@ def _parse_config(lines):
 
         # new item definition
         elif item_name:
-            if collecting_def:  # did not finish previous definition
-                raise ValueError('could not evaluate definition at line %d' % lnum)
+            if ongoing_def:
+                raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(
-                    'item definition outside of section ' 'on line %d' % lnum
+                    f'item definition outside of any section on line {lnum}'
                 )
             elif item_name in current_section:
-                raise ValueError('duplicate definition on line %d' % lnum)
+                raise ValueError(f'duplicate definition on line {lnum}')
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
@@ -224,41 +246,41 @@ def _parse_config(lines):
                 setattr(current_section, item_name, item)
                 _comments = list()
                 _def_lines = list()
-                collecting_def = None
+                ongoing_def = None
             except (ValueError, SyntaxError):  # eval failed, continued def?
-                collecting_def = item_name
+                ongoing_def = item_name
                 _def_lines.append(val)
                 continue
 
         elif _is_comment(li):
-            if collecting_def:  # did not finish definition
+            if ongoing_def:
                 raise ValueError('could not evaluate definition at line %d' % lnum)
             m = re.match(RE_COMMENT, li)
             cmnt = m.group(1)
             _comments.append(cmnt)
 
         elif _is_whitespace(li):
-            if collecting_def:  # did not finish definition
+            if ongoing_def:
                 raise ValueError('could not evaluate definition at line %d' % lnum)
 
         # either a continued def or a syntax error
         else:
-            if not collecting_def:
+            if not ongoing_def:
                 raise ValueError('syntax error at line %d: %s' % (lnum, li))
             _def_lines.append(li.strip())
             try:
                 val_new = ''.join(_def_lines)
                 val_eval = ast.literal_eval(val_new)
                 comment = ' '.join(_comments)
-                item = ConfigItem(comment=comment, name=collecting_def, value=val_eval)
-                setattr(current_section, collecting_def, item)
+                item = ConfigItem(comment=comment, name=ongoing_def, value=val_eval)
+                setattr(current_section, ongoing_def, item)
                 _comments = list()
                 _def_lines = list()
-                collecting_def = None
+                ongoing_def = None
             except (ValueError, SyntaxError):  # cannot evaluate def (yet)
                 continue
 
-    if collecting_def:  # did not finish definition
+    if ongoing_def:  # did not finish definition
         raise ValueError('could not evaluate definition at line %d: %s' % (lnum, li))
 
     return config
@@ -268,8 +290,21 @@ def update_config(
     cfg, cfg_new, create_new_sections=True, create_new_items=True, update_comments=False
 ):
     """Update existing Config instance from another.
-    create_new_items can be boolean OR a list of section names
-    into which new items are allowed to be created."""
+
+    Parameters
+    ----------
+    cfg : ConfigContainer
+        The original config (to be updated).
+    cfg_new : ConfigContainer
+        The config that contains the updated data.
+    create_new_sections : bool
+        Whether to create config sections that don't exist in the original config.
+    create_new_items : bool
+        Whether to create config items that don't exist in the original config. If False,
+        will only update existing items.
+    update_comments : bool
+        If True, comments will be updated too.
+    """
     for secname, sec in cfg_new:
         if isinstance(create_new_items, list):
             _create_new_items = secname in create_new_items
@@ -301,7 +336,22 @@ def update_config(
 
 
 def dump_config(cfg):
-    """Produce text version of Config instance that can be read back"""
+    """Return a config instance as text.
+
+    Parameters
+    ----------
+    cfg : ConfigContainer
+        The configuration.
+
+    Returns
+    -------
+    string
+        The configuration in string format.
+
+    This function should return a string that reproduces the configuration when
+    fed to _parse_config(). It can be used to e.g. write the config back into a
+    file.
+    """
 
     def _gen_dump(cfg):
         sects = sorted(cfg, key=lambda tup: tup[0])  # sort by name
