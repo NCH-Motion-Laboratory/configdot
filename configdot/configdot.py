@@ -205,7 +205,6 @@ def _parse_config(lines):
         -inline comments (would be too confusing with multiline defs)
         -nested sections (though possible with ConfigContainer)
     """
-
     _comments = list()  # comments for current variable
     _def_lines = list()  # definition lines for current variable
     current_section = None
@@ -254,19 +253,19 @@ def _parse_config(lines):
 
         elif _is_comment(li):
             if ongoing_def:
-                raise ValueError('could not evaluate definition at line %d' % lnum)
+                raise ValueError(f'could not evaluate definition at line {lnum}')
             m = re.match(RE_COMMENT, li)
             cmnt = m.group(1)
             _comments.append(cmnt)
 
         elif _is_whitespace(li):
             if ongoing_def:
-                raise ValueError('could not evaluate definition at line %d' % lnum)
+                raise ValueError(f'could not evaluate definition at line {lnum}')
 
         # either a continued def or a syntax error
         else:
             if not ongoing_def:
-                raise ValueError('syntax error at line %d: %s' % (lnum, li))
+                raise ValueError(f'syntax error at line {lnum}: {li}')
             _def_lines.append(li.strip())
             try:
                 val_new = ''.join(_def_lines)
@@ -280,9 +279,9 @@ def _parse_config(lines):
             except (ValueError, SyntaxError):  # cannot evaluate def (yet)
                 continue
 
-    if ongoing_def:  # did not finish definition
-        raise ValueError('could not evaluate definition at line %d: %s' % (lnum, li))
-
+    if ongoing_def:  # we got to the end, but did not finish definition
+        raise ValueError(f'could not evaluate definition at line {lnum}')
+        
     return config
 
 
