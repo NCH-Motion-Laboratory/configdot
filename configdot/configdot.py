@@ -22,7 +22,9 @@ RE_COMMENT = r'\s*[#;]\s*(.*)'
 RE_VAR_DEF = r'\s*([^=\s]+)\s*=\s*(.*?)\s*$'
 # match section header of form [section]; group 1 is the section
 # section names can include alphanumeric chars, _ and -
-RE_SECTION_HEADER = r'\s*\[([\w-]+)\]\s*'
+RE_SECTION_HEADER = r'\s*\[([\w-]+)\]\s*$'
+# subsection header of form [[subsection]]
+RE_SUBSECTION_HEADER = r'\s*\[\[([\w-]+)\]\]\s*$'
 
 
 def _simple_match(r, s):
@@ -58,9 +60,18 @@ def _parse_var_def(s):
 
 
 def _parse_section_header(s):
-    """Match section headers of form [header] and return header as str"""
+    """Match section header of form [header] and return header as str"""
     m = re.match(RE_SECTION_HEADER, s)
     return m.group(1) if m else None
+
+
+def _parse_subsection_header(s):
+    """Match subsection header of form [[header]] and return header as str"""    
+    m = re.match(RE_SUBSECTION_HEADER, s)
+    return m.group(1) if m else None
+
+
+
 
 
 def get_description(item_or_section):

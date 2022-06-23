@@ -76,6 +76,10 @@ def test_re_section_header():
     assert not re.match(RE_SECTION_HEADER, s)
     s = '[some/invalid/chars]'
     assert not re.match(RE_SECTION_HEADER, s)
+    s = '[[foo]'
+    assert not re.match(RE_SECTION_HEADER, s)
+    s = '[foo]]'
+    assert not re.match(RE_SECTION_HEADER, s)
     s = '[nice_chars_only]'
     assert re.match(RE_SECTION_HEADER, s)
     s = '[nice-chars-only]'
