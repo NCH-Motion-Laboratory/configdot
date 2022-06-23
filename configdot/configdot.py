@@ -235,7 +235,7 @@ def _parse_config(lines):
     # continuation of variable definition, or whitespace
     for lnum, li in enumerate(lines, 1):
 
-        if (secname := _parse_section_header(li)):
+        if secname := _parse_section_header(li):
             if ongoing_def:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(_comments)
@@ -244,7 +244,7 @@ def _parse_config(lines):
             _comments = list()
             current_subsection = None  # reset subsection when section is finished
 
-        elif (subsecname := _parse_subsection_header(li)):
+        elif subsecname := _parse_subsection_header(li):
             if ongoing_def:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:

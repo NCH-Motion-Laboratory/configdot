@@ -10,8 +10,3 @@ from .configdot import (
 )
 
 logging.getLogger('configdot').addHandler(logging.NullHandler())
-
-
-
-
-
