@@ -110,11 +110,13 @@ Output:
 
 The INI file contains of section headers, subsection headers, items and comments.
 
-Section headers are denoted as `[section]`. Subsection headers are written as `[[subsection]]`. They must occur inside sections.
+Section headers are denoted as `[section]`. Subsection headers are written as `[[subsection]]`. Subsections must occur inside sections.
 
 Items are denoted as `item = value`. They must be valid Python expressions. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file.
 
-The expressions are parsed with `ast.literal_eval()`, with the associated limitations (e.g. no support for indexing). Items must occur inside a section or subsection.
+The expressions are parsed with `ast.literal_eval()`, with the associated limitations (e.g. no support for indexing). 
+
+Items must occur inside a section or subsection.
 
 Items and sections support multiline definitions. The following is valid:
 
@@ -127,18 +129,13 @@ Comments are written as
 
     # comment
     
-They are associated with an item or section, and must be written immediately before the item/section definition. Comments may be on multiple lines. Inline comments are not allowed:
+They are associated with an item, section, or a subsection, and must be written immediately before the corresponding definition. A comment may consist of multiple lines. Inline comments are not allowed:
 
     # following line is NOT allowed
-    x = 1  # this is the x variable
+    x = 1  # this is the variable x
 
 
-## Miscellaneous notes
+## Compatibility
 
+configdot requires Python >= 3.6. There are no operating system specific features.
 
-configdot should work for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
-
-
-  
-    
-    
