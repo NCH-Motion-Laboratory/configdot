@@ -168,9 +168,19 @@ class ConfigContainer:
             self.__dict__['_items'][attr] = ConfigItem(name=attr, value=value)
 
     def __repr__(self):
-        s = '<ConfigContainer|'
-        s += ' items: '
-        s += ', '.join(f"'{key}'" for key in self._items.keys())
+        s = '<ConfigContainer |'
+        items = [name for name, it in self._items.items() if isinstance(it, ConfigItem)]
+        if items:
+            s += ' items: '
+            s += ', '.join(f"'{key}'" for key in items)
+        sections = [
+            name for name, it in self._items.items() if isinstance(it, ConfigContainer)
+        ]
+        if sections:
+            if items:
+                s += ','
+            s += ' sections: '
+            s += ', '.join(f"'{key}'" for key in sections)
         s += '>'
         return s
 
@@ -256,15 +266,13 @@ def _parse_config(lines):
             if ongoing_def:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
-                raise ValueError(
-                    f'item definition outside of a section on line {lnum}'
-                )
+                raise ValueError(f'item definition outside of a section on line {lnum}')
             else:  # item def properly inside section or subsection
                 if current_subsection:
                     if item_name in current_subsection:
                         raise ValueError(f'duplicate definition on line {lnum}')
                 elif item_name in current_section:
-    	                raise ValueError(f'duplicate definition on line {lnum}')
+                    raise ValueError(f'duplicate definition on line {lnum}')
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
