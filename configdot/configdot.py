@@ -85,7 +85,7 @@ class ConfigItem(object):
         self.value = value
 
     def __repr__(self):
-        return '<ConfigItem| %s = %r>' % (self.name, self.value)
+        return f'<ConfigItem| {self.name} = {self.value!r}>'
 
     @property
     def literal_value(self):
@@ -95,7 +95,7 @@ class ConfigItem(object):
     @property
     def item_def(self):
         """Prettyprint item definition"""
-        return '%s = %s' % (self.name, pprint.pformat(self.value))
+        return f'{self.name} = {pprint.pformat(self.value)}'
 
 
 class ConfigContainer(object):
@@ -125,7 +125,7 @@ class ConfigContainer(object):
         try:
             item = self._items[attr]
         except KeyError:
-            raise AttributeError("no such item or section: '%s'" % attr)
+            raise AttributeError(f"no such item or section: '{attr}'")
         return item.value if isinstance(item, ConfigItem) else item
 
     def __getitem__(self, item):
@@ -148,13 +148,29 @@ class ConfigContainer(object):
 
     def __repr__(self):
         s = '<ConfigContainer|'
-        s += ' items: %s' % str(self._items.keys())
+        s += f' items: {str(self._items.keys())}'
         s += '>'
         return s
 
 
-def parse_config(filename):
-    with open(filename, 'r') as f:
+def parse_config(fname, encoding=None):
+    """Parse a configuration file.
+
+    Parameters:
+    -----------
+    fname : str
+        The filename.
+    encoding : str
+        The encoding to use. By default, open() uses the preferred encoding of
+        the locale. On Windows, this is still cp1252 and not utf-8. If your
+        configuration files are in utf-8, specify encoding='utf-8'.
+        
+    Returns:
+    -------
+    ConfigContainer
+        The config object.
+    """
+    with open(fname, 'r', encoding=encoding) as f:
         lines = f.read().splitlines()
     return _parse_config(lines)
 
@@ -276,12 +292,12 @@ def update_config(
                     # item does not exist and can be created
                     setattr(sec_old, itname, item)
                 else:
-                    logger.warning('unknown config item: [%s]/%s' % (secname, itname))
+                    logger.warning(f'unknown config item: [{secname}]/{itname}')
         elif create_new_sections:
             # create nonexisting section anew
             setattr(cfg, secname, sec)
         else:
-            logger.warning('unknown config section: %s' % secname)
+            logger.warning(f'unknown config section: {secname}')
 
 
 def dump_config(cfg):
@@ -293,11 +309,11 @@ def dump_config(cfg):
             if k > 0:
                 yield ''
             if sect._comment:
-                yield '# %s' % sect._comment
-            yield '[%s]' % sectname
+                yield f'# {sect._comment}'
+            yield f'[{sectname}]'
             items = sorted(sect, key=lambda tup: tup[0])
             for itemname, item in items:
-                yield '# %s' % item._comment
+                yield f'# {item._comment}'
                 yield item.item_def
 
     return u'\n'.join(_gen_dump(cfg))
