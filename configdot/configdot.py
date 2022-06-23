@@ -56,7 +56,7 @@ def _parse_var_def(s):
         varname, val = m.group(1).strip(), m.group(2).strip()
         if _is_proper_varname(varname):
             return varname, val
-    return None, None
+    return None
 
 
 def _parse_section_header(s):
@@ -230,16 +230,12 @@ def _parse_config(lines):
     ongoing_def = False
     config = ConfigContainer()
 
+    # loop through the lines
+    # every line is either: comment, section header, variable definition,
+    # continuation of variable definition, or whitespace
     for lnum, li in enumerate(lines, 1):
-        # every line is either: comment, section header, variable definition,
-        # continuation of variable definition, or whitespace
 
-        secname = _parse_section_header(li)
-        subsecname = _parse_subsection_header(li)
-        item_name, val = _parse_var_def(li)
-
-        # new section
-        if secname:
+        if (secname := _parse_section_header(li)):
             if ongoing_def:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(_comments)
@@ -248,7 +244,7 @@ def _parse_config(lines):
             _comments = list()
             current_subsection = None  # reset subsection when section is finished
 
-        elif subsecname:
+        elif (subsecname := _parse_subsection_header(li)):
             if ongoing_def:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
@@ -261,13 +257,25 @@ def _parse_config(lines):
             setattr(current_section, subsecname, current_subsection)
             _comments = list()
 
+        elif _is_comment(li):
+            if ongoing_def:
+                raise ValueError(f'could not evaluate definition at line {lnum}')
+            m = re.match(RE_COMMENT, li)
+            cmnt = m.group(1)
+            _comments.append(cmnt)
+
+        elif _is_whitespace(li):
+            if ongoing_def:
+                raise ValueError(f'could not evaluate definition at line {lnum}')
+
         # new item definition
-        elif item_name:
+        elif (item_def := _parse_var_def(li)) is not None:
+            item_name, val = item_def
             if ongoing_def:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(f'item definition outside of a section on line {lnum}')
-            else:  # item def properly inside section or subsection
+            else:
                 if current_subsection:
                     if item_name in current_subsection:
                         raise ValueError(f'duplicate definition on line {lnum}')
@@ -290,22 +298,12 @@ def _parse_config(lines):
                 _def_lines.append(val)
                 continue
 
-        elif _is_comment(li):
+        else:  # if none of the above, must be a continuation or syntax error
             if ongoing_def:
-                raise ValueError(f'could not evaluate definition at line {lnum}')
-            m = re.match(RE_COMMENT, li)
-            cmnt = m.group(1)
-            _comments.append(cmnt)
-
-        elif _is_whitespace(li):
-            if ongoing_def:
-                raise ValueError(f'could not evaluate definition at line {lnum}')
-
-        # either a continued def or a syntax error
-        else:
-            if not ongoing_def:
+                _def_lines.append(li.strip())
+            else:
                 raise ValueError(f'syntax error at line {lnum}: {li}')
-            _def_lines.append(li.strip())
+            # try to finish the def
             try:
                 val_new = ''.join(_def_lines)
                 val_eval = ast.literal_eval(val_new)
@@ -315,10 +313,10 @@ def _parse_config(lines):
                 _comments = list()
                 _def_lines = list()
                 ongoing_def = None
-            except (ValueError, SyntaxError):  # cannot evaluate def (yet)
+            except (ValueError, SyntaxError):  # cannot finish def (yet)
                 continue
 
-    if ongoing_def:  # we got to the end, but did not finish definition
+    if ongoing_def:  # we got to the end, but did not finish a definition
         raise ValueError(f'could not evaluate definition at line {lnum}')
 
     return config
