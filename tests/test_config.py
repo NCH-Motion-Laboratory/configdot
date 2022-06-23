@@ -149,6 +149,22 @@ def test_def_last_line():
     assert 'foo' in cfg.section2
 
 
+def test_subsections():
+    fn = _file_path('subsections_valid.cfg')
+    cfg = parse_config(fn)
+    assert 'subsection1' in cfg.section1
+    assert 'subsection2' in cfg.section1
+    assert 'var1' in cfg.section1.subsection1
+    assert 'var2' in cfg.section1.subsection2
+    assert cfg.section1.subsection1.var1 == 1
+
+
+def test_invalid_subsections():
+    fn = _file_path('subsections_invalid.cfg')
+    with pytest.raises(ValueError):
+        parse_config(fn)
+
+
 def test_write_read_cycle():
     fn = _file_path('valid.cfg')
     cfg_ = parse_config(fn)

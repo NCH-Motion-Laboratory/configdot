@@ -66,12 +66,9 @@ def _parse_section_header(s):
 
 
 def _parse_subsection_header(s):
-    """Match subsection header of form [[header]] and return header as str"""    
+    """Match subsection header of form [[header]] and return header as str"""
     m = re.match(RE_SUBSECTION_HEADER, s)
     return m.group(1) if m else None
-
-
-
 
 
 def get_description(item_or_section):
@@ -219,6 +216,7 @@ def _parse_config(lines):
     _comments = list()  # comments for current variable
     _def_lines = list()  # definition lines for current variable
     current_section = None
+    current_subsection = None
     ongoing_def = False
     config = ConfigContainer()
 
@@ -227,6 +225,7 @@ def _parse_config(lines):
         # continuation of variable definition, or whitespace
 
         secname = _parse_section_header(li)
+        subsecname = _parse_subsection_header(li)
         item_name, val = _parse_var_def(li)
 
         # new section
@@ -237,6 +236,20 @@ def _parse_config(lines):
             current_section = ConfigContainer(comment=comment)
             setattr(config, secname, current_section)
             _comments = list()
+            current_subsection = None  # reset subsection when section is finished
+
+        elif subsecname:
+            if ongoing_def:  # did not finish previous definition
+                raise ValueError(f'could not evaluate definition at line {lnum}')
+            elif not current_section:
+                raise ValueError(
+                    f'subsection definition outside of a section on line {lnum}'
+                )
+            # create a new subsection and insert under current section
+            comment = ' '.join(_comments)
+            current_subsection = ConfigContainer(comment=comment)
+            setattr(current_section, subsecname, current_subsection)
+            _comments = list()
 
         # new item definition
         elif item_name:
@@ -244,16 +257,23 @@ def _parse_config(lines):
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(
-                    f'item definition outside of any section on line {lnum}'
+                    f'item definition outside of a section on line {lnum}'
                 )
-            elif item_name in current_section:
-                raise ValueError(f'duplicate definition on line {lnum}')
+            else:  # item def properly inside section or subsection
+                if current_subsection:
+                    if item_name in current_subsection:
+                        raise ValueError(f'duplicate definition on line {lnum}')
+                elif item_name in current_section:
+    	                raise ValueError(f'duplicate definition on line {lnum}')
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
                 comment = ' '.join(_comments)
                 item = ConfigItem(comment=comment, name=item_name, value=val_eval)
-                setattr(current_section, item_name, item)
+                if current_subsection:
+                    setattr(current_subsection, item_name, item)
+                else:
+                    setattr(current_section, item_name, item)
                 _comments = list()
                 _def_lines = list()
                 ongoing_def = None
@@ -292,7 +312,7 @@ def _parse_config(lines):
 
     if ongoing_def:  # we got to the end, but did not finish definition
         raise ValueError(f'could not evaluate definition at line {lnum}')
-        
+
     return config
 
 
