@@ -106,16 +106,33 @@ Output:
     # 
     recipe = 'Fruit salad'
 
-## Miscellaneous notes
+## INI file syntax
 
-The INI parser supports multiline definitions, i.e. you can write something like:
+The INI file contains of section headers, subsection headers, items and comments.
+
+Section headers are denoted as `[section]`. Subsection headers are written as `[[subsection]]`. They must occur inside sections.
+
+Items are denoted as `item = value`. They must be valid Python expressions.
+
+Items and sections support multiline definitions. The following is valid:
 
     [foo]
     bar = [[1, 0, 0],
            [0, 1, 0],
            [0, 0, 1]]
 
-configdot supports nested configuration objects (sections inside sections), but this is not yet implemented in the INI file parser.
+Comments are written as 
+
+    # comment
+    
+They are associated with an item or section, and must be written immediately before the item/section definition. Comments may be on multiple lines. Inline comments are not allowed:
+
+    # following line is NOT allowed
+    x = 1  # this is the x variable
+
+
+## Miscellaneous notes
+
 
 configdot should work for both Python 2 and Python 3. If using Python 2, extended characters in the configuration will likely cause problems, since `ast.literal_eval()` does not produce Unicode.
 
