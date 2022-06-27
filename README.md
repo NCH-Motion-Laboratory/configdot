@@ -75,7 +75,7 @@ Output:
 
     'The food section'
 
-You can also get comments for the items. In the INI file, they should be placed on the line preceding the item definition. For this, you need to use the dict-like syntax:
+You can also get comments for the items. For this, you need to use the dict-like syntax:
 
     config.food['cost']._comment
 
