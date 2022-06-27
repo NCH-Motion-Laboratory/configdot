@@ -45,7 +45,7 @@ def test_re_comment():
                     assert m.group(1) == cmt_string
 
 
-def test_RE_ITEM_DEF():
+def test_re_item_def():
     """Test item definition regex"""
     dli = list()
     # various whitespace
@@ -63,7 +63,10 @@ def test_RE_ITEM_DEF():
     d = 'abc foo'
     assert not re.match(RE_ITEM_DEF, d)
     # no identifier
-    d = '==x'
+    d = '=x'
+    assert not re.match(RE_ITEM_DEF, d)
+    # illegal chars in varname
+    d = 'a&b = c'
     assert not re.match(RE_ITEM_DEF, d)
 
 
@@ -133,6 +136,13 @@ def test_orphaned_def():
 def test_invalid_def():
     """Test cfg with invalid def"""
     fn = _file_path('invalid.cfg')
+    with pytest.raises(ValueError):
+        parse_config(fn)
+
+
+def test_invalid_def2():
+    """Test cfg with invalid def"""
+    fn = _file_path('invalid2.cfg')
     with pytest.raises(ValueError):
         parse_config(fn)
 

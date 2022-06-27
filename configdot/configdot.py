@@ -18,8 +18,10 @@ RE_ALPHANUMERIC = r'\w+$'  # at least 1 alphanumeric char
 RE_WHITESPACE = r'\s*$'  # empty or whitespace
 # match line comment; group 1 will be the comment
 RE_COMMENT = r'\s*[#;]\s*(.*)'
-# match item def; groups 1 and 2 are the item and the (possibly empty) value
-RE_ITEM_DEF = r'\s*([^=\s]+)\s*=\s*(.*?)\s*$'
+# whitespace, alphanumeric item name (at least 1 char), whitespace, equals sign,
+# item value (may be anything at this point) matched non-greedily so it doesn't
+# match the trailing whitespace, trailing whitespace
+RE_ITEM_DEF = r'\s*(\w+)\s*=\s*(.*?)\s*$'
 # whitespace, 1 or more ['s, section name, 1 or more ]'s, whitespace, end of line
 RE_SECTION_HEADER = r'\s*(\[+)([\w-]+)(\]+)\s*$'
 
@@ -34,11 +36,6 @@ def _is_comment(s):
     return _simple_match(RE_COMMENT, s)
 
 
-def _is_proper_varname(s):
-    """Check if s is an acceptable variable name"""
-    return _simple_match(RE_ALPHANUMERIC, s)
-
-
 def _is_whitespace(s):
     """Check if s is whitespace only"""
     return _simple_match(RE_WHITESPACE, s)
@@ -50,9 +47,8 @@ def _parse_item_def(s):
     Return varname, val tuple if successful"""
     m = re.match(RE_ITEM_DEF, s)
     if m:
-        varname, val = m.group(1).strip(), m.group(2).strip()
-        if _is_proper_varname(varname):
-            return varname, val
+        varname, val = m.group(1), m.group(2)
+        return varname, val
 
 
 def _parse_section_header(s):
