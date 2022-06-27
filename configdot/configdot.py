@@ -53,7 +53,7 @@ def _parse_item_def(s):
 
 def _parse_section_header(s):
     """Match section or subsection (or subsubsection etc.) header.
-    
+
     Headers are written e.g. [header] or [[header]] etc. where the number of
     brackets indicates the level of nesting (here 1 and 2, respectively)
     Returns a tuple of (sec_name, sec_level).
@@ -289,7 +289,9 @@ def _parse_config(lines):
                 val_new = ''.join(current_def_lines)
                 val_eval = ast.literal_eval(val_new)
                 comment = ' '.join(comment_lines)
-                item = ConfigItem(comment=comment, name=current_item_name, value=val_eval)
+                item = ConfigItem(
+                    comment=comment, name=current_item_name, value=val_eval
+                )
                 setattr(current_section, current_item_name, item)
                 comment_lines = list()
                 current_def_lines = list()
@@ -352,6 +354,20 @@ def update_config(
             logger.warning(f'unknown config section: {secname}')
 
 
+def _dump_section(sec):
+    """Dump a ConfigContainer in text format.
+
+    Yields lines that should reproduce the .INI used to produce the container
+    (however, multiline comments are not preserved)
+    """
+    for item_name, item in sec:
+        if isinstance(item, ConfigContainer):
+            yield f'[{item_name}]'
+            yield from _dump_section(item)
+        elif isinstance(item, ConfigItem):
+            yield item.item_def
+
+
 def dump_config(cfg):
     """Return a config instance as text.
 
@@ -369,18 +385,4 @@ def dump_config(cfg):
     fed to _parse_config(). It can be used to e.g. write the config back into a
     file.
     """
-
-    def _gen_dump(cfg):
-        sects = sorted(cfg, key=lambda tup: tup[0])  # sort by name
-        for k, (sectname, sect) in enumerate(sects):
-            if k > 0:
-                yield ''
-            if sect._comment:
-                yield f'# {sect._comment}'
-            yield f'[{sectname}]'
-            items = sorted(sect, key=lambda tup: tup[0])
-            for itemname, item in items:
-                yield f'# {item._comment}'
-                yield item.item_def
-
-    return u'\n'.join(_gen_dump(cfg))
+    return '\n'.join(_dump_section(cfg))
