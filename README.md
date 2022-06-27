@@ -1,12 +1,11 @@
 # configdot
 
-configdot is a minimalistic library providing a config object and INI file parser for configuration of Python programs. Compared to packages such as `ConfigParser` and `ConfigObj`, the benefits are:
+configdot is a minimalistic INI file parser for configuration of Python programs. Compared to packages such as `ConfigParser` and `ConfigObj`, the benefits are:
 
 * The INI file entries are evaluated as Python expressions by `ast.literal_eval()`, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
-* Instead of the `getitem` syntax `config['section']['item']`, configdot supports item access by the `getattr` syntax, so you can write `config.section.item` instead.
-* The sections can be nested arbitrarily deep, so you can create subsections and even subsubsubsections (if you really want to).
+* Instead of having to write `config['section']['item']`, configdot supports accessing items as attributes, so you can write `config.section.item` instead.
+* The sections can be nested arbitrarily deep, so you can create subsections (and even subsubsubsections if you really want to).
 
-Why not just have the config files in Python instead? First, depending on your setup, arbitrary Python code in config files may be a security risk. Second, you still need to create the section hierarchy by e.g. using empty classes, which makes the setup files less readable than the INI syntax.
 
 ## Installation
 
@@ -141,4 +140,8 @@ They are associated with an item, section, or a subsection, and must be written 
 ## Compatibility
 
 configdot requires Python >= 3.6. There are no operating system specific features.
+
+## Miscellaneous
+
+Why not just have the config files in Python instead? First, depending on your setup, arbitrary Python code in config files may be a security risk. Second, you still need to create the section hierarchy by e.g. using empty classes, which will make your setup files less readable than with the INI syntax.
 
