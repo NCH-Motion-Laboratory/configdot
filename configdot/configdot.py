@@ -26,7 +26,7 @@ RE_WHITESPACE = r'\s*$'  # empty or whitespace
 # match line comment; group 1 will be the comment
 RE_COMMENT = r'\s*[#;]\s*(.*)'
 # whitespace, alphanumeric item name (at least 1 char), whitespace, equals sign,
-# item value (may be anything at this point) matched non-greedily so it doesn't
+# item value (may be anything at this point) is matched non-greedily so it doesn't
 # match the trailing whitespace, trailing whitespace
 RE_ITEM_DEF = r'\s*(\w+)\s*=\s*(.*?)\s*$'
 # whitespace, 1 or more ['s, section name, 1 or more ]'s, whitespace, end of line
@@ -99,7 +99,7 @@ class ConfigItem:
         return f'<ConfigItem| {self.name} = {self.value!r}>'
 
     def __eq__(self, other):
-        return self.value == other.value
+        return self.value == other.value and self._comment == other._comment
 
     @property
     def literal_value(self):
@@ -134,7 +134,7 @@ class ConfigContainer:
             yield val
 
     def __eq__(self, other):
-        return self._items == other._items
+        return self._items == other._items and self._comment == other._comment
 
     def __getattr__(self, attr):
         """Returns an item by the syntax container.item.
@@ -239,7 +239,7 @@ def _parse_config(lines):
             secname, sec_level = sec_def
             if current_item_name:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
-            comment = ' '.join(comment_lines)
+            comment = '\n'.join(comment_lines)
             current_section = ConfigContainer(comment=comment)
             sections.append((current_section, sec_level))
             parents = [sec for sec, level in sections if level == sec_level - 1]
@@ -273,7 +273,7 @@ def _parse_config(lines):
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
-                comment = ' '.join(comment_lines)
+                comment = '\n'.join(comment_lines)
                 item = ConfigItem(comment=comment, name=item_name, value=val_eval)
                 setattr(current_section, item_name, item)
                 comment_lines = list()
@@ -362,10 +362,13 @@ def update_config(
 def _dump_section(sec):
     """Dump a ConfigContainer in text format.
 
-    Yields lines that should reproduce the .INI used to produce the container
-    (however, multiline comments are not preserved)
+    Yields lines that should reproduce the .INI  which will produce the
+    container and its items.
     """
     for item_or_section_name, item_or_section in sec:
+        if comment := item_or_section._comment:
+            for comment_line in comment.split('\n'):
+                yield f'# {comment_line}'
         if isinstance(item_or_section, ConfigContainer):
             yield f'[{item_or_section_name}]'
             yield from _dump_section(item_or_section)

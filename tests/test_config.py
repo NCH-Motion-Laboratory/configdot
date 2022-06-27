@@ -177,6 +177,3 @@ def test_write_read_cycle():
     txtlines = txt.split('\n')
     cfg_back = _parse_config(txtlines)
     assert cfg_ == cfg_back
-
-
-
