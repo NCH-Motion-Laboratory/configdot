@@ -216,9 +216,9 @@ def _parse_config(lines):
         -inline comments (would be too confusing with multiline defs)
     """
     _comments = list()  # comments for current variable
-    _def_lines = list()  # definition lines for current variable
     current_section = None
-    ongoing_def = False
+    current_def_name = None
+    current_def_lines = list()  # definition lines for current variable
     config = ConfigContainer()
     # mapping of section -> section level; 0 is the root (the config object) 1
     # is a section, 2 is a subsection, etc.
@@ -231,7 +231,7 @@ def _parse_config(lines):
 
         if (sec_def := _parse_section_header(li)) is not None:
             secname, sec_level = sec_def
-            if ongoing_def:  # did not finish previous definition
+            if current_def_name:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(_comments)
             current_section = ConfigContainer(comment=comment)
@@ -245,20 +245,20 @@ def _parse_config(lines):
             _comments = list()
 
         elif _is_comment(li):
-            if ongoing_def:
+            if current_def_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             m = re.match(RE_COMMENT, li)
             cmnt = m.group(1)
             _comments.append(cmnt)
 
         elif _is_whitespace(li):
-            if ongoing_def:
+            if current_def_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
 
         # new item definition
         elif (item_def := _parse_var_def(li)) is not None:
             item_name, val = item_def
-            if ongoing_def:
+            if current_def_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(f'item definition outside of a section on line {lnum}')
@@ -271,32 +271,32 @@ def _parse_config(lines):
                 item = ConfigItem(comment=comment, name=item_name, value=val_eval)
                 setattr(current_section, item_name, item)
                 _comments = list()
-                _def_lines = list()
-                ongoing_def = None
+                current_def_lines = list()
+                current_def_name = None
             except (ValueError, SyntaxError):  # eval failed, continued def?
-                ongoing_def = item_name
-                _def_lines.append(val)
+                current_def_name = item_name
+                current_def_lines.append(val)
                 continue
 
         else:  # if none of the above, must be a continuation or syntax error
-            if ongoing_def:
-                _def_lines.append(li.strip())
+            if current_def_name:
+                current_def_lines.append(li.strip())
             else:
                 raise ValueError(f'syntax error at line {lnum}: {li}')
             # try to finish the def
             try:
-                val_new = ''.join(_def_lines)
+                val_new = ''.join(current_def_lines)
                 val_eval = ast.literal_eval(val_new)
                 comment = ' '.join(_comments)
-                item = ConfigItem(comment=comment, name=ongoing_def, value=val_eval)
-                setattr(current_section, ongoing_def, item)
+                item = ConfigItem(comment=comment, name=current_def_name, value=val_eval)
+                setattr(current_section, current_def_name, item)
                 _comments = list()
-                _def_lines = list()
-                ongoing_def = None
+                current_def_lines = list()
+                current_def_name = None
             except (ValueError, SyntaxError):  # cannot finish def (yet)
                 continue
 
-    if ongoing_def:  # we got to the end, but did not finish a definition
+    if current_def_name:  # we got to the end, but did not finish a definition
         raise ValueError(f'could not evaluate definition at line {lnum}')
 
     return config
