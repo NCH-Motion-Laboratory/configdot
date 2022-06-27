@@ -20,11 +20,8 @@ RE_WHITESPACE = r'\s*$'  # empty or whitespace
 RE_COMMENT = r'\s*[#;]\s*(.*)'
 # match item def; groups 1 and 2 are the item and the (possibly empty) value
 RE_VAR_DEF = r'\s*([^=\s]+)\s*=\s*(.*?)\s*$'
-# match section header of form [section]; group 1 is the section
-# section names can include alphanumeric chars, _ and -
-RE_SECTION_HEADER = r'\s*\[([\w-]+)\]\s*$'
-# subsection header of form [[subsection]]
-RE_SUBSECTION_HEADER = r'\s*\[\[([\w-]+)\]\]\s*$'
+# whitespace, 1 or more ['s, section name, 1 or more ]'s, whitespace, end of line
+RE_SECTION_HEADER = r'\s*(\[+)([\w-]+)(\]+)\s*$'
 
 
 def _simple_match(r, s):
@@ -56,19 +53,15 @@ def _parse_var_def(s):
         varname, val = m.group(1).strip(), m.group(2).strip()
         if _is_proper_varname(varname):
             return varname, val
-    return None
 
 
 def _parse_section_header(s):
     """Match section header of form [header] and return header as str"""
     m = re.match(RE_SECTION_HEADER, s)
-    return m.group(1) if m else None
-
-
-def _parse_subsection_header(s):
-    """Match subsection header of form [[header]] and return header as str"""
-    m = re.match(RE_SUBSECTION_HEADER, s)
-    return m.group(1) if m else None
+    if m:
+        opening, closing = m.group(1), m.group(3)
+        if (sec_level := len(opening)) == len(closing):
+            return m.group(2), sec_level
 
 
 def get_description(item_or_section):
@@ -221,40 +214,34 @@ def _parse_config(lines):
         -multiple comment lines per item/section
     Does not support:
         -inline comments (would be too confusing with multiline defs)
-        -nested sections (though possible with ConfigContainer)
     """
     _comments = list()  # comments for current variable
     _def_lines = list()  # definition lines for current variable
     current_section = None
-    current_subsection = None
     ongoing_def = False
     config = ConfigContainer()
+    # mapping of section -> section level; 0 is the root (the config object) 1
+    # is a section, 2 is a subsection, etc.
+    sections = {config: 0}
 
     # loop through the lines
     # every line is either: comment, section header, variable definition,
     # continuation of variable definition, or whitespace
     for lnum, li in enumerate(lines, 1):
 
-        if secname := _parse_section_header(li):
+        if (sec_def := _parse_section_header(li)) is not None:
+            secname, sec_level = sec_def
             if ongoing_def:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(_comments)
             current_section = ConfigContainer(comment=comment)
-            setattr(config, secname, current_section)
-            _comments = list()
-            current_subsection = None  # reset subsection when section is finished
-
-        elif subsecname := _parse_subsection_header(li):
-            if ongoing_def:  # did not finish previous definition
-                raise ValueError(f'could not evaluate definition at line {lnum}')
-            elif not current_section:
-                raise ValueError(
-                    f'subsection definition outside of a section on line {lnum}'
-                )
-            # create a new subsection and insert under current section
-            comment = ' '.join(_comments)
-            current_subsection = ConfigContainer(comment=comment)
-            setattr(current_section, subsecname, current_subsection)
+            sections[current_section] = sec_level
+            parents = [sec for sec, level in sections.items() if level == sec_level - 1]
+            if not parents:
+                raise ValueError(f'subsection outside a parent section at line {lnum}')
+            else:
+                latest_parent = parents[-1]
+            setattr(latest_parent, secname, current_section)
             _comments = list()
 
         elif _is_comment(li):
@@ -275,21 +262,14 @@ def _parse_config(lines):
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(f'item definition outside of a section on line {lnum}')
-            else:
-                if current_subsection:
-                    if item_name in current_subsection:
-                        raise ValueError(f'duplicate definition on line {lnum}')
-                elif item_name in current_section:
-                    raise ValueError(f'duplicate definition on line {lnum}')
+            elif item_name in current_section:
+                raise ValueError(f'duplicate definition on line {lnum}')
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
                 comment = ' '.join(_comments)
                 item = ConfigItem(comment=comment, name=item_name, value=val_eval)
-                if current_subsection:
-                    setattr(current_subsection, item_name, item)
-                else:
-                    setattr(current_section, item_name, item)
+                setattr(current_section, item_name, item)
                 _comments = list()
                 _def_lines = list()
                 ongoing_def = None
