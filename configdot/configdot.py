@@ -52,7 +52,12 @@ def _parse_item_def(s):
 
 
 def _parse_section_header(s):
-    """Match section header of form [header] and return header as str"""
+    """Match section or subsection (or subsubsection etc.) header.
+    
+    Headers are written e.g. [header] or [[header]] etc. where the number of
+    brackets indicates the level of nesting (here 1 and 2, respectively)
+    Returns a tuple of (sec_name, sec_level).
+    """
     m = re.match(RE_SECTION_HEADER, s)
     if m:
         opening, closing = m.group(1), m.group(3)
@@ -211,9 +216,9 @@ def _parse_config(lines):
     Does not support:
         -inline comments (would be too confusing with multiline defs)
     """
-    _comments = list()  # comments for current variable
+    comment_lines = list()  # comments for current variable
     current_section = None
-    current_def_name = None
+    current_item_name = None
     current_def_lines = list()  # definition lines for current variable
     config = ConfigContainer()
     # mapping of section -> section level; 0 is the root (the config object) 1
@@ -227,9 +232,9 @@ def _parse_config(lines):
 
         if (sec_def := _parse_section_header(li)) is not None:
             secname, sec_level = sec_def
-            if current_def_name:  # did not finish previous definition
+            if current_item_name:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
-            comment = ' '.join(_comments)
+            comment = ' '.join(comment_lines)
             current_section = ConfigContainer(comment=comment)
             sections[current_section] = sec_level
             parents = [sec for sec, level in sections.items() if level == sec_level - 1]
@@ -238,23 +243,23 @@ def _parse_config(lines):
             else:
                 latest_parent = parents[-1]
             setattr(latest_parent, secname, current_section)
-            _comments = list()
+            comment_lines = list()
 
         elif _is_comment(li):
-            if current_def_name:
+            if current_item_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             m = re.match(RE_COMMENT, li)
             cmnt = m.group(1)
-            _comments.append(cmnt)
+            comment_lines.append(cmnt)
 
         elif _is_whitespace(li):
-            if current_def_name:
+            if current_item_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
 
         # new item definition
         elif (item_def := _parse_item_def(li)) is not None:
             item_name, val = item_def
-            if current_def_name:
+            if current_item_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             elif not current_section:
                 raise ValueError(f'item definition outside of a section on line {lnum}')
@@ -263,19 +268,19 @@ def _parse_config(lines):
             try:
                 val_eval = ast.literal_eval(val)
                 # if eval is successful, record the variable
-                comment = ' '.join(_comments)
+                comment = ' '.join(comment_lines)
                 item = ConfigItem(comment=comment, name=item_name, value=val_eval)
                 setattr(current_section, item_name, item)
-                _comments = list()
+                comment_lines = list()
                 current_def_lines = list()
-                current_def_name = None
+                current_item_name = None
             except (ValueError, SyntaxError):  # eval failed, continued def?
-                current_def_name = item_name
+                current_item_name = item_name
                 current_def_lines.append(val)
                 continue
 
         else:  # if none of the above, must be a continuation or syntax error
-            if current_def_name:
+            if current_item_name:
                 current_def_lines.append(li.strip())
             else:
                 raise ValueError(f'syntax error at line {lnum}: {li}')
@@ -283,16 +288,16 @@ def _parse_config(lines):
             try:
                 val_new = ''.join(current_def_lines)
                 val_eval = ast.literal_eval(val_new)
-                comment = ' '.join(_comments)
-                item = ConfigItem(comment=comment, name=current_def_name, value=val_eval)
-                setattr(current_section, current_def_name, item)
-                _comments = list()
+                comment = ' '.join(comment_lines)
+                item = ConfigItem(comment=comment, name=current_item_name, value=val_eval)
+                setattr(current_section, current_item_name, item)
+                comment_lines = list()
                 current_def_lines = list()
-                current_def_name = None
+                current_item_name = None
             except (ValueError, SyntaxError):  # cannot finish def (yet)
                 continue
 
-    if current_def_name:  # we got to the end, but did not finish a definition
+    if current_item_name:  # we got to the end, but did not finish a definition
         raise ValueError(f'could not evaluate definition at line {lnum}')
 
     return config
