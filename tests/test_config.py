@@ -6,7 +6,7 @@ Test the config interface
 @author: jussi (jnu@iki.fi)
 """
 
-import os.path as op
+from pathlib import Path
 import pytest
 import logging
 import re
@@ -17,9 +17,7 @@ from configdot.configdot import (
     dump_config,
     RE_COMMENT,
     RE_SECTION_HEADER,
-    RE_SUBSECTION_HEADER,
     RE_VAR_DEF,
-    get_description,
     _parse_config,
 )
 
@@ -28,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def _file_path(filename):
-    return op.join('testdata', filename)
+    return Path('testdata') / filename
 
 
 def test_re_comment():
@@ -77,34 +75,10 @@ def test_re_section_header():
     assert not re.match(RE_SECTION_HEADER, s)
     s = '[some/invalid/chars]'
     assert not re.match(RE_SECTION_HEADER, s)
-    s = '[[foo]'
-    assert not re.match(RE_SECTION_HEADER, s)
-    s = '[foo]]'
-    assert not re.match(RE_SECTION_HEADER, s)
     s = '[nice_chars_only]'
     assert re.match(RE_SECTION_HEADER, s)
     s = '[nice-chars-only]'
     assert re.match(RE_SECTION_HEADER, s)
-
-
-def test_re_subsection_header():
-    sli = ['[[foo]]', ' [[foo]] ']
-    for s in sli:
-        assert re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[ foo]]'
-    assert not re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[some/invalid/chars]]'
-    assert not re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[foo]'
-    assert not re.match(RE_SUBSECTION_HEADER, s)
-    s = '[foo]]'
-    assert not re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[foo]]]'
-    assert not re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[nice_chars_only]]'
-    assert re.match(RE_SUBSECTION_HEADER, s)
-    s = '[[nice-chars-only]]'
-    assert re.match(RE_SUBSECTION_HEADER, s)
 
 
 def test_config():
@@ -196,3 +170,7 @@ def test_write_read_cycle():
         assert secname in cfg_back
         for itemname, item in sec:
             assert itemname in getattr(cfg_back, secname)
+
+
+if __name__ == '__main__':
+    test_subsections()
