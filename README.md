@@ -131,7 +131,11 @@ Comments are written as
 
     # comment
     
-They are associated with an item, section, or a subsection, and must be written immediately before the corresponding definition. A comment may consist of multiple lines. Inline comments are not allowed:
+or alternatively
+
+    ; comment
+    
+Comments are associated with an item, section, or a subsection, and appear before the corresponding definition. A comment may consist of multiple lines. Inline comments are not allowed:
 
     # following line is NOT allowed
     x = 1  # this is the variable x
