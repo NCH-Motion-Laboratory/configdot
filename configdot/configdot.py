@@ -2,6 +2,14 @@
 """
 Parse INI files into nested config objects.
 
+
+WIP:
+-read/write cycle fails with subsections 
+-update func is outdated
+-should __eq__ compare comments?
+-should multiline comments be preserved?
+
+
 @author: Jussi (jnu@iki.fi)
 """
 import ast
@@ -14,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 # regexes for parsing
-RE_ALPHANUMERIC = r'\w+$'  # at least 1 alphanumeric char
 RE_WHITESPACE = r'\s*$'  # empty or whitespace
 # match line comment; group 1 will be the comment
 RE_COMMENT = r'\s*[#;]\s*(.*)'
@@ -23,22 +30,14 @@ RE_COMMENT = r'\s*[#;]\s*(.*)'
 # match the trailing whitespace, trailing whitespace
 RE_ITEM_DEF = r'\s*(\w+)\s*=\s*(.*?)\s*$'
 # whitespace, 1 or more ['s, section name, 1 or more ]'s, whitespace, end of line
+# the regex doesn't check that the opening and closing brackets match, it's
+# done by the Python code instead
 RE_SECTION_HEADER = r'\s*(\[+)([\w-]+)(\]+)\s*$'
 
 
 def _simple_match(r, s):
     """Match regex r against string s"""
     return bool(re.match(r, s))
-
-
-def _is_comment(s):
-    """Check if s is a comment"""
-    return _simple_match(RE_COMMENT, s)
-
-
-def _is_whitespace(s):
-    """Check if s is whitespace only"""
-    return _simple_match(RE_WHITESPACE, s)
 
 
 def _parse_item_def(s):
@@ -251,14 +250,14 @@ def _parse_config(lines):
             setattr(latest_parent, secname, current_section)
             comment_lines = list()
 
-        elif _is_comment(li):
+        elif _simple_match(RE_COMMENT, li):
             if current_item_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             m = re.match(RE_COMMENT, li)
             cmnt = m.group(1)
             comment_lines.append(cmnt)
 
-        elif _is_whitespace(li):
+        elif _simple_match(RE_WHITESPACE, li):
             if current_item_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
 
@@ -366,12 +365,12 @@ def _dump_section(sec):
     Yields lines that should reproduce the .INI used to produce the container
     (however, multiline comments are not preserved)
     """
-    for item_name, item in sec:
-        if isinstance(item, ConfigContainer):
-            yield f'[{item_name}]'
-            yield from _dump_section(item)
-        elif isinstance(item, ConfigItem):
-            yield item.item_def
+    for item_or_section_name, item_or_section in sec:
+        if isinstance(item_or_section, ConfigContainer):
+            yield f'[{item_or_section_name}]'
+            yield from _dump_section(item_or_section)
+        elif isinstance(item_or_section, ConfigItem):
+            yield item_or_section.item_def
 
 
 def dump_config(cfg):
