@@ -17,7 +17,7 @@ from configdot.configdot import (
     dump_config,
     RE_COMMENT,
     RE_SECTION_HEADER,
-    RE_VAR_DEF,
+    RE_ITEM_DEF,
     _parse_config,
 )
 
@@ -45,26 +45,26 @@ def test_re_comment():
                     assert m.group(1) == cmt_string
 
 
-def test_re_var_def():
+def test_RE_ITEM_DEF():
     """Test item definition regex"""
     dli = list()
     # various whitespace
     dli = ['a=1', 'a = 1', ' a = 1 ']
     for d in dli:
-        m = re.match(RE_VAR_DEF, d)
+        m = re.match(RE_ITEM_DEF, d)
         assert m.group(1) == 'a'
         assert m.group(2) == '1'
     # definition of string with equals
     d = 'a = "b=1"'
-    m = re.match(RE_VAR_DEF, d)
+    m = re.match(RE_ITEM_DEF, d)
     assert m.group(1) == 'a'
     assert m.group(2) == '"b=1"'
     # no equals
     d = 'abc foo'
-    assert not re.match(RE_VAR_DEF, d)
+    assert not re.match(RE_ITEM_DEF, d)
     # no identifier
     d = '==x'
-    assert not re.match(RE_VAR_DEF, d)
+    assert not re.match(RE_ITEM_DEF, d)
 
 
 def test_re_section_header():

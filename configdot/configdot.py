@@ -19,7 +19,7 @@ RE_WHITESPACE = r'\s*$'  # empty or whitespace
 # match line comment; group 1 will be the comment
 RE_COMMENT = r'\s*[#;]\s*(.*)'
 # match item def; groups 1 and 2 are the item and the (possibly empty) value
-RE_VAR_DEF = r'\s*([^=\s]+)\s*=\s*(.*?)\s*$'
+RE_ITEM_DEF = r'\s*([^=\s]+)\s*=\s*(.*?)\s*$'
 # whitespace, 1 or more ['s, section name, 1 or more ]'s, whitespace, end of line
 RE_SECTION_HEADER = r'\s*(\[+)([\w-]+)(\]+)\s*$'
 
@@ -44,11 +44,11 @@ def _is_whitespace(s):
     return _simple_match(RE_WHITESPACE, s)
 
 
-def _parse_var_def(s):
-    """Match (possibly partial) var definition.
+def _parse_item_def(s):
+    """Match (possibly partial) config item definition.
 
     Return varname, val tuple if successful"""
-    m = re.match(RE_VAR_DEF, s)
+    m = re.match(RE_ITEM_DEF, s)
     if m:
         varname, val = m.group(1).strip(), m.group(2).strip()
         if _is_proper_varname(varname):
@@ -256,7 +256,7 @@ def _parse_config(lines):
                 raise ValueError(f'could not evaluate definition at line {lnum}')
 
         # new item definition
-        elif (item_def := _parse_var_def(li)) is not None:
+        elif (item_def := _parse_item_def(li)) is not None:
             item_name, val = item_def
             if current_def_name:
                 raise ValueError(f'could not evaluate definition at line {lnum}')
