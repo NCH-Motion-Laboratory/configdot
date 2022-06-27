@@ -45,7 +45,7 @@ You can directly get the items under a section by attribute access:
 
     config.food.calories
 
-The output is a Python dict:
+The output is a normal Python dict:
 
     {'Apple': 50, 'Banana': 100}
 
@@ -75,7 +75,7 @@ Output:
 
     'The food section'
 
-You can also get comments for the items. In the INI file, they should be placed on the line preceding the item definition. To get a comment for an item, you need to use the dict-like syntax:
+You can also get comments for the items. In the INI file, they should be placed on the line preceding the item definition. For this, you need to use the dict-like syntax:
 
     config.food['cost']._comment
 
