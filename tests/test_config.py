@@ -176,11 +176,7 @@ def test_write_read_cycle():
     txt = dump_config(cfg_)
     txtlines = txt.split('\n')
     cfg_back = _parse_config(txtlines)
-    for secname, sec in cfg_:
-        assert secname in cfg_back
-        for itemname, item in sec:
-            assert itemname in getattr(cfg_back, secname)
+    assert cfg_ == cfg_back
 
 
-if __name__ == '__main__':
-    test_subsections()
+

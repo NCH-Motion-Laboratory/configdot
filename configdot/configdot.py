@@ -99,6 +99,9 @@ class ConfigItem:
     def __repr__(self):
         return f'<ConfigItem| {self.name} = {self.value!r}>'
 
+    def __eq__(self, other):
+        return self.value == other.value
+
     @property
     def literal_value(self):
         """Returns a string that is supposed to evaluate to the value"""
@@ -130,6 +133,9 @@ class ConfigContainer:
         """Yields tuples of (item_name, item)"""
         for val in self._items.items():
             yield val
+
+    def __eq__(self, other):
+        return self._items == other._items
 
     def __getattr__(self, attr):
         """Returns an item by the syntax container.item.
@@ -223,7 +229,7 @@ def _parse_config(lines):
     config = ConfigContainer()
     # mapping of section -> section level; 0 is the root (the config object) 1
     # is a section, 2 is a subsection, etc.
-    sections = {config: 0}
+    sections = [(config, 0)]
 
     # loop through the lines
     # every line is either: comment, section header, variable definition,
@@ -236,8 +242,8 @@ def _parse_config(lines):
                 raise ValueError(f'could not evaluate definition at line {lnum}')
             comment = ' '.join(comment_lines)
             current_section = ConfigContainer(comment=comment)
-            sections[current_section] = sec_level
-            parents = [sec for sec, level in sections.items() if level == sec_level - 1]
+            sections.append((current_section, sec_level))
+            parents = [sec for sec, level in sections if level == sec_level - 1]
             if not parents:
                 raise ValueError(f'subsection outside a parent section at line {lnum}')
             else:
