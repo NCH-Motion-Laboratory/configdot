@@ -4,11 +4,9 @@ Parse INI files into nested config objects.
 
 
 WIP:
--read/write cycle fails with subsections 
--update func is outdated
--should __eq__ compare comments?
--should multiline comments be preserved?
 
+-update func is outdated
+-rewrite examples on GitHub
 
 @author: Jussi (jnu@iki.fi)
 """
