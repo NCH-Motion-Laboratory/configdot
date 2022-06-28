@@ -2,9 +2,11 @@
 
 configdot is a minimalistic INI file parser for configuration of Python programs. Compared to packages such as `ConfigParser` and `ConfigObj`, the benefits are:
 
-* The INI file entries are evaluated as Python expressions by `ast.literal_eval()`, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
-* Instead of having to write `config['section']['item']`, configdot supports accessing items as attributes, so you can write `config.section.item` instead.
-* The sections can be nested arbitrarily deep, so you can create subsections (and even subsubsubsections if you really want to).
+* The INI file entries are safely evaluated as Python expressions, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
+* Instead of having to write `config['section']['item']` you can write `config.section.item` instead when accessing the configuration.
+* The sections can be nested arbitrarily deep, so you can create subsections and even subsubsubsections if you really want to.
+* Contains utilities to conditionally update one config from another, and dump configuration objects into text.
+
 
 
 ## Installation
@@ -12,23 +14,23 @@ configdot is a minimalistic INI file parser for configuration of Python programs
     pip install configdot
 
 ## Basic usage
+Consider the example INI file below.
 
-Given the silly `demo.ini` file below:
 ```
 # The food section
 [food]
 fruits = ['Apple', 'Banana', 'Kiwi']
 calories = {'Apple': 50, 'Banana': 100}
-recipe = 'Fruit salad'
-# this is the cost of the recipe in euros
-cost = 10
 
 # The drinks section
 [drinks]
 favorite = 'Coke'
+# subsection for alcoholic drinks
+[[alcoholic]]
+favorite = 'beer'
 ```
 
-You can load it by:
+You can load the file as follows:
 
     import configdot
     config = configdot.parse_config('demo.ini')
@@ -39,9 +41,9 @@ To get a section:
 
 Output:
 
-    <ConfigContainer| items: ['recipes', 'cost', 'calories', 'fruits']>
+    <ConfigContainer| items: ['calories', 'fruits']>
 
-You can directly get the items under a section by attribute access:
+You can get the items under a section by attribute access:
 
     config.food.calories
 
@@ -51,16 +53,16 @@ The output is a normal Python dict:
 
 You can also modify items directly by the attribute syntax:
 
-    config.food.cost = 20
+    config.food.fruits = ['Watermelon', 'Pineapple']
 
 ## Getting sections and items from a config
 
-`ConfigContainer` instances support the iteration protocol. You can get the section names and sections from a config as follows:
+`ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further containers (subsections).
 
-    for section_name, section in config:
-        print(section_name)
+    for item_name, item in config:
+        print(item_name)
 
-The sections are also `ConfigContainer` instances, so they can be iterated over. This will give you the config items and their names:
+The sections are also `ConfigContainer` instances, so they can be iterated over in similar fashion.
 
     for item_name, item in section:
         print(item_name)
