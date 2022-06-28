@@ -19,12 +19,13 @@ Consider the example INI file below.
 # The food section
 [food]
 fruits = ['Apple', 'Banana', 'Kiwi']
-# calories for each fruit
+# calories for some of the fruit
 calories = {'Apple': 50, 'Banana': 100}
 
 # The drinks section
 [drinks]
 favorite = 'Coke'
+
 # subsection for alcoholic drinks
 [[alcoholic]]
 favorite = 'beer'
