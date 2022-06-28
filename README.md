@@ -5,8 +5,6 @@ configdot is a minimalistic INI file parser for configuration of Python programs
 * The INI file entries are safely evaluated as Python expressions, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
 * Instead of having to write `config['section']['item']` you can write `config.section.item` instead when accessing the configuration.
 * The sections can be nested arbitrarily deep, so you can create subsections and even subsubsubsections if you really want to.
-* Contains utilities to conditionally update one config from another, and dump configuration objects into text.
-
 
 
 ## Installation
@@ -94,7 +92,7 @@ This should reproduce the INI file.
 
 ## INI file syntax
 
-The INI file contains of section headers, items and comments.
+The INI file consists of section headers, items and comments.
 
 Section headers are denoted as `[section]`, `[[subsection]]`, `[[[subsubsection]]]` etc. They may be nested arbitrarily deep. Subsections must always occur following a section that is one level lower, e.g. a `[[subsubsection]]` must occur inside (after) a `[section]`.
 
