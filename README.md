@@ -41,7 +41,7 @@ To get a section:
 
 Output:
 
-    <ConfigContainer| items: ['calories', 'fruits']>
+    <ConfigContainer | items: 'fruits', 'calories'>
 
 You can get the items under a section by attribute access:
 
