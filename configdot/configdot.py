@@ -42,8 +42,7 @@ def _parse_item_def(s):
     """Match (possibly partial) config item definition.
 
     Return varname, val tuple if successful"""
-    m = re.match(RE_ITEM_DEF, s)
-    if m:
+    if m := re.match(RE_ITEM_DEF, s):
         varname, val = m.group(1), m.group(2)
         return varname, val
 
@@ -55,8 +54,7 @@ def _parse_section_header(s):
     brackets indicates the level of nesting (here 1 and 2, respectively)
     Returns a tuple of (sec_name, sec_level).
     """
-    m = re.match(RE_SECTION_HEADER, s)
-    if m:
+    if m := re.match(RE_SECTION_HEADER, s):
         opening, closing = m.group(1), m.group(3)
         if (sec_level := len(opening)) == len(closing):
             return m.group(2), sec_level
@@ -138,7 +136,7 @@ class ConfigContainer:
         """Returns an item by the syntax container.item.
 
         If the item is a ConfigItem instance, return the item value instead.
-        This allows getting values directly.
+        This allows getting values directly by the syntax section.item.
         """
         try:
             item = self._items[attr]
@@ -187,13 +185,13 @@ def parse_config(fname, encoding=None):
 
     Parameters:
     -----------
-    fname : str
+    fname : str | Path
         The filename.
     encoding : str
         The encoding to use. By default, open() uses the preferred encoding of
-        the locale. On Windows, this is still cp1252 and not utf-8. If your
-        configuration files are in utf-8 (as they probably will be), you need to
-        specify encoding='utf-8' to correctly read extended characters.
+        the locale. On most Windows, this is still cp1252 instead of utf-8. If
+        your configuration files are in utf-8 (as they probably will be), you
+        need to specify encoding='utf-8' to correctly read extended characters.
 
     Returns:
     -------
@@ -219,13 +217,13 @@ def _parse_config(lines):
     Does not support:
         -inline comments (would be too confusing with multiline defs)
     """
-    comment_lines = list()  # comments for current variable
     current_section = None
     current_item_name = None
+    comment_lines = list()  # comments for current variable
     current_def_lines = list()  # definition lines for current variable
-    config = ConfigContainer()
-    # mapping of section -> section level; 0 is the root (the config object) 1
-    # is a section, 2 is a subsection, etc.
+    config = ConfigContainer()  # the 'root container'
+    # mapping of section -> section level; 0 is the root, 1 is a section, 2 is a
+    # subsection, etc.
     sections = [(config, 0)]
 
     # loop through the lines
@@ -234,9 +232,9 @@ def _parse_config(lines):
     for lnum, li in enumerate(lines, 1):
 
         if (sec_def := _parse_section_header(li)) is not None:
-            secname, sec_level = sec_def
             if current_item_name:  # did not finish previous definition
                 raise ValueError(f'could not evaluate definition at line {lnum}')
+            secname, sec_level = sec_def
             comment = '\n'.join(comment_lines)
             current_section = ConfigContainer(comment=comment)
             sections.append((current_section, sec_level))
