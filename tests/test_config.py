@@ -142,6 +142,7 @@ def test_config_update():
     )
     assert 'newvar' in cfg_orig.section2
     assert cfg_orig.section2['newvar']._comment == 'whole new variable'
+    assert cfg_orig.section2.newvar == ['a',2,3]
     # section3 was not supposed to be updated with new variables
     assert 'var4' not in cfg_orig.section3
     # however updates to existing variables must still succeed
