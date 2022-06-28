@@ -1,9 +1,11 @@
 import logging
 
 from .configdot import (
-    parse_config,
     ConfigContainer,
     ConfigItem,
+)
+from .utils import (
+    parse_config,
     update_config,
     dump_config,
     get_description,

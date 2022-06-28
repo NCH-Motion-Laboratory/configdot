@@ -6,15 +6,18 @@ Test the config interface
 @author: jussi (jnu@iki.fi)
 """
 
+import imp
 from pathlib import Path
 import pytest
 import logging
 import re
 
-from configdot.configdot import (
+from configdot import (
     parse_config,
     update_config,
-    dump_config,
+    dump_config
+)
+from configdot.utils import (
     RE_COMMENT,
     RE_SECTION_HEADER,
     RE_ITEM_DEF,
