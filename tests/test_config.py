@@ -131,7 +131,7 @@ def test_config_update():
     assert 'section4' not in cfg_orig
     assert 'newvar' not in cfg_orig.section2
     assert cfg_orig.section1.var1 == 2  # updates must still succeed
-    # test limit creation of new items
+    # test limiting creation of new items
     cfg_orig = parse_config(fn)
     update_config(
         cfg_orig,
@@ -141,7 +141,36 @@ def test_config_update():
         update_comments=False,
     )
     assert 'newvar' in cfg_orig.section2
+    # section3 was not supposed to be updated with new variables
     assert 'var4' not in cfg_orig.section3
+    # however updates to existing variables must still succeed
+    assert cfg_orig.section3.var3 == 4
+    # test creation of new sections
+    cfg_orig = parse_config(fn)
+    update_config(
+        cfg_orig,
+        cfg_new,
+        create_new_sections=True,
+        create_new_items=True,
+        update_comments=False,
+    )
+    assert 'newvar' in cfg_orig.section2
+    assert 'section4' in cfg_orig
+    assert 'subsection4' in cfg_orig.section4
+    assert 'li' in cfg_orig.section4.subsection4
+    # test creation of new sections but not items
+    cfg_orig = parse_config(fn)
+    update_config(
+        cfg_orig,
+        cfg_new,
+        create_new_sections=True,
+        create_new_items=False,
+        update_comments=False,
+    )
+    assert 'var4' not in cfg_orig.section3
+    assert 'section4' in cfg_orig
+    assert 'subsection4' in cfg_orig.section4
+    assert 'li' not in cfg_orig.section4.subsection4
 
 
 def test_orphaned_def():

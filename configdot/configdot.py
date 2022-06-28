@@ -345,7 +345,7 @@ def update_config(
         The config that contains the updated data.
     create_new_sections : bool
         Whether to allow creation of config sections that don't exist in the
-        original config.
+        original config. 
     create_new_items : bool | list
         Whether to create config items that don't exist in the original config.
         If True, new items may be created under any section. If list, must be a
@@ -357,28 +357,28 @@ def update_config(
     for name, item in _traverse(cfg_new):
         name_list = name.split('.')
         item_name = name_list[-1]
-        # get the parent section for this item from the old config
-        parent_name = name_list[:-1]
+        # get the parent section for this item in the orig config
         try:
-            if parent_name:
+            if parent_name := name_list[:-1]:
                 parent = _get_nested_attr(cfg_orig, parent_name)
             else:
                 parent = cfg_orig
         except KeyError:
             logger.warning(f'There is no parent section for {name}, so it was discarded.'
                             'You need to enable creation of new sections to include it.')
-            
+            continue
         try:
-            item_old = _get_nested_attr(cfg_orig, name_list)
+            item_orig = _get_nested_attr(cfg_orig, name_list)
             if update_comments:
-                item_old._comment = item._comment
+                item_orig._comment = item._comment
             # ConfigContainers don't need updating, except for the comments
             # their contents will be updated recursively
-            if isinstance(item_old, ConfigItem):
+            if isinstance(item_orig, ConfigItem):
                 setattr(parent, item_name, item)
         except KeyError:  # item does not exist in the original config
             if isinstance(item, ConfigContainer) and create_new_sections:
-                setattr(parent, item_name, item)
+                sec = ConfigContainer(comment=item._comment)
+                setattr(parent, item_name, sec)
             elif isinstance(item, ConfigItem):
                 if (
                     create_new_items is True
