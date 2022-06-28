@@ -309,8 +309,8 @@ def _parse_config_lines(lines):
 def _traverse(container):
     """Recursively traverse a ConfigContainer.
 
-    Yields (attr, item) tuples, where attr is the nested attribute (e.g.
-    section.subsection.item) and item is the item.
+    Yields (attr, item) tuples, where attr is the fully qualified attribute name
+    (e.g. section.subsection.item) and item is the item.
     """
     for attr, item in container:
         yield attr, item
@@ -320,16 +320,16 @@ def _traverse(container):
             )
 
 
-def _get_nested_attr_list(cfg, attr_list):
-    """Get an item by from a ConfigContainer using a list of nested attributes"""
+def _get_nested_attr(cfg, attr_list):
+    """Get an item by from a ConfigContainer using a nested attribute"""
     attr_list = attr_list.copy()  # don't mutate the argument
     attr0 = cfg[attr_list.pop(0)]
     # recurse until the final item in the attribute chain is reached
-    return _get_nested_attr_list(attr0, attr_list) if attr_list else attr0
+    return _get_nested_attr(attr0, attr_list) if attr_list else attr0
 
 
 def update_config(
-    cfg_old,
+    cfg_orig,
     cfg_new,
     create_new_sections=True,
     create_new_items=True,
@@ -339,41 +339,53 @@ def update_config(
 
     Parameters
     ----------
-    cfg : ConfigContainer
+    cfg_orig : ConfigContainer
         The original config (to be updated).
     cfg_new : ConfigContainer
         The config that contains the updated data.
     create_new_sections : bool
-        Whether to create config sections that don't exist in the original config.
-    create_new_items : bool
-        Whether to create config items that don't exist in the original config. If False,
-        will only update existing items.
+        Whether to allow creation of config sections that don't exist in the
+        original config.
+    create_new_items : bool | list
+        Whether to create config items that don't exist in the original config.
+        If True, new items may be created under any section. If list, must be a
+        list of names for the sections where creating new items is allowed,
+        e.g. ['section1.subsection1'].
     update_comments : bool
         If True, comments will be updated too.
     """
-    for attr, item in _traverse(cfg_new):
-        print(attr, item)
-        attr_list = attr.split('.')
-        parent_attr = attr_list[:-1]
-        # the parent section in the old config
+    for name, item in _traverse(cfg_new):
+        name_list = name.split('.')
+        item_name = name_list[-1]
+        # get the parent section for this item from the old config
+        parent_name = name_list[:-1]
         try:
-            parent = (
-                _get_nested_attr_list(cfg_old, parent_attr) if parent_attr else cfg_old
-            )
+            if parent_name:
+                parent = _get_nested_attr(cfg_orig, parent_name)
+            else:
+                parent = cfg_orig
         except KeyError:
-            print(f'there is no parent section for {attr}')
-            continue
+            logger.warning(f'There is no parent section for {name}, so it was discarded.'
+                            'You need to enable creation of new sections to include it.')
+            
         try:
-            item_old = _get_nested_attr_list(cfg_old, attr_list)
-            if isinstance(item_old, ConfigContainer):
-                pass  # TODO: set comment?
-            elif isinstance(item_old, ConfigItem):
-                setattr(parent, attr_list[-1], item)
-        except KeyError:  # item not in cfg_old
+            item_old = _get_nested_attr(cfg_orig, name_list)
+            if update_comments:
+                item_old._comment = item._comment
+            # ConfigContainers don't need updating, except for the comments
+            # their contents will be updated recursively
+            if isinstance(item_old, ConfigItem):
+                setattr(parent, item_name, item)
+        except KeyError:  # item does not exist in the original config
             if isinstance(item, ConfigContainer) and create_new_sections:
-                setattr(parent, attr_list[-1], item)
-            elif isinstance(item, ConfigItem) and create_new_items:
-                setattr(parent, attr_list[-1], item)
+                setattr(parent, item_name, item)
+            elif isinstance(item, ConfigItem):
+                if (
+                    create_new_items is True
+                    or (isinstance(create_new_items, list)
+                    and '.'.join(parent_name) in create_new_items)
+                ):
+                    setattr(parent, item_name, item)
 
 
 def _dump_config(cfg):

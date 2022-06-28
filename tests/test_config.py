@@ -103,30 +103,45 @@ def test_config():
 def test_config_update():
     fn = _file_path('valid.cfg')
     fn_new = _file_path('updates.cfg')
-    cfg_old = parse_config(fn)
+    cfg_orig = parse_config(fn)
     cfg_new = parse_config(fn_new)
-    update_config(cfg_old, cfg_new, update_comments=False)
-    #assert 'section4' in cfg_old
-    #assert 'newvar' in cfg_old.section2
-
-    # assert cfg_old.section1._comment == 'old section1 comment'
-    # cfg_old = parse_config(fn)
-    # update_config(cfg_old, cfg_new, create_new_sections=False)
-    # assert 'section3' not in cfg_old
-    # assert 'newvar' in cfg_old.section2
-    # cfg_old = parse_config(fn)
-    # update_config(cfg_old, cfg_new, create_new_sections=True, create_new_items=False)
-    # assert 'section3' in cfg_old
-    # assert 'newvar' not in cfg_old.section2
-    # cfg_old = parse_config(fn)
-    # update_config(cfg_old, cfg_new, update_comments=True)
-    # assert cfg_old.section1._comment == 'updated section1 comment'
-    # cfg_old = parse_config(fn)
-    # update_config(cfg_old, cfg_new, create_new_items=['section2'])
-    # assert 'newvar' in cfg_old.section2
-    # cfg_old = parse_config(fn)
-    # update_config(cfg_old, cfg_new, create_new_items=['section1'])
-    # assert 'newvar' not in cfg_old.section2
+    # test not updating comments
+    update_config(cfg_orig, cfg_new, update_comments=False)
+    assert cfg_orig.section1.var1 == 2
+    assert 'section4' in cfg_orig
+    assert 'newvar' in cfg_orig.section2
+    assert cfg_orig.section1._comment == 'section1 comment'
+    cfg_orig = parse_config(fn)
+    update_config(cfg_orig, cfg_new, update_comments=True)
+    # test updating comments
+    assert cfg_orig.section1.var1 == 2
+    assert 'section4' in cfg_orig
+    assert 'newvar' in cfg_orig.section2
+    assert cfg_orig.section1._comment == 'section1 updated comment'
+    assert cfg_orig.section4.subsection4._comment == 'subsection4 new comment'
+    # test not creating new sections or items
+    cfg_orig = parse_config(fn)
+    update_config(
+        cfg_orig,
+        cfg_new,
+        create_new_sections=False,
+        create_new_items=False,
+        update_comments=False,
+    )
+    assert 'section4' not in cfg_orig
+    assert 'newvar' not in cfg_orig.section2
+    assert cfg_orig.section1.var1 == 2  # updates must still succeed
+    # test limit creation of new items
+    cfg_orig = parse_config(fn)
+    update_config(
+        cfg_orig,
+        cfg_new,
+        create_new_sections=False,
+        create_new_items=['section2'],
+        update_comments=False,
+    )
+    assert 'newvar' in cfg_orig.section2
+    assert 'var4' not in cfg_orig.section3
 
 
 def test_orphaned_def():
