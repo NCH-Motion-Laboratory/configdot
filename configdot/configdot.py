@@ -205,10 +205,10 @@ def parse_config(fname, encoding=None):
         )
     with open(fname, 'r', encoding=encoding) as f:
         lines = f.read().splitlines()
-    return _parse_config(lines)
+    return _parse_config_lines(lines)
 
 
-def _parse_config(lines):
+def _parse_config_lines(lines):
     """Parse INI file lines into a ConfigContainer instance.
 
     Supports:
@@ -306,8 +306,34 @@ def _parse_config(lines):
     return config
 
 
+def _traverse(container):
+    """Recursively traverse a ConfigContainer.
+
+    Yields (attr, item) tuples, where attr is the nested attribute (e.g.
+    section.subsection.item) and item is the item.
+    """
+    for attr, item in container:
+        yield attr, item
+        if isinstance(item, ConfigContainer):
+            yield from (
+                (f'{attr}.{subname}', subitem) for subname, subitem in _traverse(item)
+            )
+
+
+def _get_nested_attr_list(cfg, attr_list):
+    """Get an item by from a ConfigContainer using a list of nested attributes"""
+    attr_list = attr_list.copy()  # don't mutate the argument
+    attr0 = cfg[attr_list.pop(0)]
+    # recurse until the final item in the attribute chain is reached
+    return _get_nested_attr_list(attr0, attr_list) if attr_list else attr0
+
+
 def update_config(
-    cfg, cfg_new, create_new_sections=True, create_new_items=True, update_comments=False
+    cfg_old,
+    cfg_new,
+    create_new_sections=True,
+    create_new_items=True,
+    update_comments=False,
 ):
     """Update existing Config instance from another.
 
@@ -325,49 +351,42 @@ def update_config(
     update_comments : bool
         If True, comments will be updated too.
     """
-    for secname, sec in cfg_new:
-        if isinstance(create_new_items, list):
-            _create_new_items = secname in create_new_items
-        else:
-            _create_new_items = create_new_items
-        if secname in cfg:
-            # section exists, update the items
-            sec_old = cfg[secname]
-            if update_comments:
-                sec_old._comment = sec._comment
-            for itname, item in sec:
-                if itname in sec_old:
-                    # item exists, update
-                    if update_comments:
-                        setattr(sec_old, itname, item)
-                    else:  # update value only
-                        item_old = sec_old[itname]
-                        item_old.value = item.value
-                elif _create_new_items:
-                    # item does not exist and can be created
-                    setattr(sec_old, itname, item)
-                else:
-                    logger.warning(f'unknown config item: [{secname}]/{itname}')
-        elif create_new_sections:
-            # create nonexisting section anew
-            setattr(cfg, secname, sec)
-        else:
-            logger.warning(f'unknown config section: {secname}')
+    for attr, item in _traverse(cfg_new):
+        print(attr, item)
+        attr_list = attr.split('.')
+        parent_attr = attr_list[:-1]
+        # the parent section in the old config
+        try:
+            parent = (
+                _get_nested_attr_list(cfg_old, parent_attr) if parent_attr else cfg_old
+            )
+        except KeyError:
+            print(f'there is no parent section for {attr}')
+            continue
+        try:
+            item_old = _get_nested_attr_list(cfg_old, attr_list)
+            if isinstance(item_old, ConfigContainer):
+                pass  # TODO: set comment?
+            elif isinstance(item_old, ConfigItem):
+                setattr(parent, attr_list[-1], item)
+        except KeyError:  # item not in cfg_old
+            if isinstance(item, ConfigContainer) and create_new_sections:
+                setattr(parent, attr_list[-1], item)
+            elif isinstance(item, ConfigItem) and create_new_items:
+                setattr(parent, attr_list[-1], item)
 
 
-def _dump_section(sec):
-    """Dump a ConfigContainer in text format.
-
-    Yields lines that should reproduce the .INI  which will produce the
-    container and its items.
-    """
-    for item_or_section_name, item_or_section in sec:
+def _dump_config(cfg):
+    """Return a config instance as text. Yields lines"""
+    for attr, item_or_section in _traverse(cfg):
+        name = attr.split('.')[-1]
         if comment := item_or_section._comment:
             for comment_line in comment.split('\n'):
                 yield f'# {comment_line}'
         if isinstance(item_or_section, ConfigContainer):
-            yield f'[{item_or_section_name}]'
-            yield from _dump_section(item_or_section)
+            level = attr.count('.') + 1
+            opening, closing = '[' * level, ']' * level
+            yield f'{opening}{name}{closing}'
         elif isinstance(item_or_section, ConfigItem):
             yield item_or_section.item_def
 
@@ -389,4 +408,4 @@ def dump_config(cfg):
     fed to _parse_config(). It can be used to e.g. write the config back into a
     file.
     """
-    return '\n'.join(_dump_section(cfg))
+    return '\n'.join(_dump_config(cfg))
