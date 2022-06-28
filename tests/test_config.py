@@ -6,17 +6,12 @@ Test the config interface
 @author: jussi (jnu@iki.fi)
 """
 
-import imp
 from pathlib import Path
 import pytest
 import logging
 import re
 
-from configdot import (
-    parse_config,
-    update_config,
-    dump_config
-)
+from configdot import parse_config, update_config, dump_config
 from configdot.utils import (
     RE_COMMENT,
     RE_SECTION_HEADER,
@@ -145,7 +140,7 @@ def test_config_update():
     )
     assert 'newvar' in cfg_orig.section2
     assert cfg_orig.section2['newvar']._comment == 'whole new variable'
-    assert cfg_orig.section2.newvar == ['a',2,3]
+    assert cfg_orig.section2.newvar == ['a', 2, 3]
     # section3 was not supposed to be updated with new variables
     assert 'var4' not in cfg_orig.section3
     # however updates to existing variables must still succeed
