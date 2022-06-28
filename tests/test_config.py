@@ -208,9 +208,9 @@ def test_invalid_subsections():
 
 
 def test_write_read_cycle():
-    fn = _file_path('valid.cfg')
-    cfg_ = parse_config(fn)
-    txt = dump_config(cfg_)
-    txtlines = txt.split('\n')
-    cfg_back = _parse_config_lines(txtlines)
-    assert cfg_ == cfg_back
+    for fn in [_file_path('valid.cfg'), _file_path('updates.cfg')]:
+        cfg_ = parse_config(fn)
+        txt = dump_config(cfg_)
+        txtlines = txt.split('\n')
+        cfg_back = _parse_config_lines(txtlines)
+        assert cfg_ == cfg_back

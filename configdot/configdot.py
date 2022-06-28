@@ -2,10 +2,8 @@
 """
 Parse INI files into nested config objects.
 
-
 WIP:
 
--update func is outdated
 -rewrite examples on GitHub
 
 @author: Jussi (jnu@iki.fi)
@@ -309,23 +307,26 @@ def _parse_config_lines(lines):
 def _traverse(container):
     """Recursively traverse a ConfigContainer.
 
-    Yields (attr, item) tuples, where attr is the fully qualified attribute name
+    Yields (name, item) tuples, where name is the fully qualified attribute name
     (e.g. section.subsection.item) and item is the item.
     """
-    for attr, item in container:
-        yield attr, item
+    for name, item in container:
+        yield name, item
         if isinstance(item, ConfigContainer):
             yield from (
-                (f'{attr}.{subname}', subitem) for subname, subitem in _traverse(item)
+                (f'{name}.{subname}', subitem) for subname, subitem in _traverse(item)
             )
 
 
-def _get_nested_attr(cfg, attr_list):
-    """Get an item by from a ConfigContainer using a nested attribute"""
-    attr_list = attr_list.copy()  # don't mutate the argument
-    attr0 = cfg[attr_list.pop(0)]
+def _get_attr_by_name(cfg, name_list):
+    """Get an item by from a ConfigContainer using a fully qualified attribute name.
+   
+    name_list is e.g. ['section', 'subsection', 'item'] for section.subsection.item
+    """
+    name_list = name_list.copy()  # don't mutate the argument
+    attr0 = cfg[name_list.pop(0)]
     # recurse until the final item in the attribute chain is reached
-    return _get_nested_attr(attr0, attr_list) if attr_list else attr0
+    return _get_attr_by_name(attr0, name_list) if name_list else attr0
 
 
 def update_config(
@@ -345,7 +346,7 @@ def update_config(
         The config that contains the updated data.
     create_new_sections : bool
         Whether to allow creation of config sections that don't exist in the
-        original config. 
+        original config.
     create_new_items : bool | list
         Whether to create config items that don't exist in the original config.
         If True, new items may be created under any section. If list, must be a
@@ -353,37 +354,48 @@ def update_config(
         e.g. ['section1.subsection1'].
     update_comments : bool
         If True, comments will be updated too.
+
+    Note that this does not create a full copy, but may create references to
+    items in the new config.
     """
     for name, item in _traverse(cfg_new):
-        name_list = name.split('.')
-        item_name = name_list[-1]
+        name_list = name.split('.')  # e.g. 'section1.subsection1.var'
+        item_name = name_list[-1]   # e.g. 'var'
         # get the parent section for this item in the orig config
         try:
             if parent_name := name_list[:-1]:
-                parent = _get_nested_attr(cfg_orig, parent_name)
+                parent = _get_attr_by_name(cfg_orig, parent_name)
             else:
+                # if parent name is empty, we're at the root container
                 parent = cfg_orig
         except KeyError:
-            logger.warning(f'There is no parent section for {name}, so it was discarded.'
-                            'You need to enable creation of new sections to include it.')
+            # item orphaned, since new sections cannot be created
+            logger.warning(
+                f'There is no parent section for {name}, so it was discarded.'
+                'You need to enable creation of new sections to include it.'
+            )
             continue
         try:
-            item_orig = _get_nested_attr(cfg_orig, name_list)
+            # try to find the item in the original config
+            # if unsuccessful, this will throw a KeyError
+            item_orig = _get_attr_by_name(cfg_orig, name_list)
             if update_comments:
                 item_orig._comment = item._comment
-            # ConfigContainers don't need updating, except for the comments
+            # ConfigContainers don't need updating, except for the comments;
             # their contents will be updated recursively
             if isinstance(item_orig, ConfigItem):
                 setattr(parent, item_name, item)
-        except KeyError:  # item does not exist in the original config
+        except KeyError:
+            # item does not exist in the original config
             if isinstance(item, ConfigContainer) and create_new_sections:
-                sec = ConfigContainer(comment=item._comment)
-                setattr(parent, item_name, sec)
+                # create new empty container; using the containger from cfg_new
+                # would also copy its items, which we may not want
+                section = ConfigContainer(comment=item._comment)
+                setattr(parent, item_name, section)
             elif isinstance(item, ConfigItem):
-                if (
-                    create_new_items is True
-                    or (isinstance(create_new_items, list)
-                    and '.'.join(parent_name) in create_new_items)
+                if create_new_items is True or (
+                    isinstance(create_new_items, list)
+                    and '.'.join(parent_name) in create_new_items
                 ):
                     setattr(parent, item_name, item)
 
@@ -413,7 +425,7 @@ def dump_config(cfg):
 
     Returns
     -------
-    string
+    str
         The configuration in string format.
 
     This function should return a string that reproduces the configuration when
