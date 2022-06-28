@@ -14,12 +14,14 @@ configdot is a minimalistic INI file parser for configuration of Python programs
     pip install configdot
 
 ## Basic usage
+
 Consider the example INI file below.
 
 ```
 # The food section
 [food]
 fruits = ['Apple', 'Banana', 'Kiwi']
+# calories for each fruit
 calories = {'Apple': 50, 'Banana': 100}
 
 # The drinks section
@@ -57,19 +59,14 @@ You can also modify items directly by the attribute syntax:
 
 ## Getting sections and items from a config
 
-`ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further containers (subsections).
+`ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further `ConfigContainers` (in case of subsections).
 
     for item_name, item in config:
         print(item_name)
 
-The sections are also `ConfigContainer` instances, so they can be iterated over in similar fashion.
-
-    for item_name, item in section:
-        print(item_name)
-
 ## Getting comments
 
-You can get INI file comments for a section as follows:
+You can get the INI file comments for a section as follows:
 
     config.food._comment
 
@@ -77,13 +74,9 @@ Output:
 
     'The food section'
 
-You can also get comments for the items. For this, you need to use the dict-like syntax:
+You can also get comments for the items. For this, you need to use the `getitem` syntax:
 
-    config.food['cost']._comment
-
-Output:
-    
-    'this is the cost of the recipe in euros'
+    config.food['calories']._comment
     
 ## Updating and dumping a config
 
@@ -93,34 +86,21 @@ To update values in a config instance using another instance:
 
 This can be useful e.g. to update a global config with some user-defined values.
   
-Finally, you can dump the config item as text:
+You can dump the config item as text:
 
     print(configdot.dump_config(config))
 
-Output:
-
-    # The food section
-    [food]
-    # 
-    calories = {'Apple': 50, 'Banana': 100}
-    # this is the cost of the recipe in euros
-    cost = 10
-    # 
-    fruits = ['Apple', 'Banana', 'Kiwi']
-    # 
-    recipe = 'Fruit salad'
+This should reproduce the INI file.
 
 ## INI file syntax
 
-The INI file contains of section headers, subsection headers, items and comments.
+The INI file contains of section headers, items and comments.
 
-Section headers are denoted as `[section]`. Subsection headers are written as `[[subsection]]`. Subsections must occur inside sections.
+Section headers are denoted as `[section]`, `[[subsection]]`, `[[[subsubsection]]]` etc. They may be nested arbitrarily deep. Subsections must always occur following a section that is one level lower, e.g. a `[[subsubsection]]` must occur inside (after) a `[section]`.
 
-Item definitions must be written as `item_name = value`. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file.
+Item definitions must be written as `item_name = value`. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file. Items can occur inside any section (and must not be outside of a section).
 
 The expressions are parsed with `ast.literal_eval()`, with the associated limitations (e.g. no support for indexing). 
-
-Items must occur inside a section or subsection.
 
 Items and sections support multiline definitions. The following is valid:
 
@@ -141,7 +121,6 @@ Comments are associated with an item, section, or a subsection, and appear befor
 
     # following line is NOT allowed
     x = 1  # this is the variable x
-
 
 ## Compatibility
 
