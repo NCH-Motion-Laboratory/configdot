@@ -12,9 +12,7 @@ class ConfigItem:
     """Holds data for a config item"""
 
     def __init__(self, name=None, value=None, comment=None):
-        if comment is None:
-            comment = ''
-        self._comment = comment
+        self._comment = '' if comment is None else comment
         self.name = name
         self.value = value
 
