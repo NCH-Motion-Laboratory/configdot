@@ -55,6 +55,10 @@ You can also modify items directly by the attribute syntax:
 
     config.food.fruits = ['Watermelon', 'Pineapple']
 
+Items inside nested subsections can be accessed similarly:
+
+    print(config.drinks.alcoholic.favorite)
+
 ## Getting sections and items from a config
 
 `ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further `ConfigContainers` (in case of subsections).
