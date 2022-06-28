@@ -120,9 +120,15 @@ Comments are associated with an item, section, or a subsection, and appear befor
     # following line is NOT allowed
     x = 1  # this is the variable x
 
+## Extended characters
+
+Section headers can include any Unicode word characters. Item names follow the same rules as Python identifiers.
+
+Note that under Windows, the default text encoding is still typically CP1252. Thus, you must supply `encoding='utf-8'` to `parse_config()` if you want to use extended characters in your INI file. 
+
 ## Compatibility
 
-configdot requires Python >= 3.6. There are no operating system specific features.
+configdot requires Python >= 3.6.
 
 ## Miscellaneous
 
