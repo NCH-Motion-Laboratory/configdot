@@ -3,8 +3,8 @@
 configdot is a minimalistic INI file parser for configuration of Python programs. Compared to packages such as `ConfigParser` and `ConfigObj`, the benefits are:
 
 * The INI file entries are safely evaluated as Python expressions, so several Python types (such as tuples, lists, and dicts) can be directly used in the INI file.
-* Instead of having to write `config['section']['item']` you can write `config.section.item` instead when accessing the configuration.
-* The sections can be nested arbitrarily deep, so you can create subsections and even subsubsubsections if you really want to.
+* Instead of having to write `config['section']['item']`, you can write `config.section.item` when accessing the configuration.
+* The sections can be nested arbitrarily deep, so you can create subsections (and subsubsubsections if you really want to).
 
 
 ## Installation
