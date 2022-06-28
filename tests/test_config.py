@@ -80,6 +80,8 @@ def test_re_section_header():
     assert re.match(RE_SECTION_HEADER, s)
     s = '[nice-chars-only]'
     assert re.match(RE_SECTION_HEADER, s)
+    s = '[äöäöäöäöä]'
+    assert re.match(RE_SECTION_HEADER, s)
 
 
 def test_config():
@@ -96,6 +98,15 @@ def test_config():
     assert cfg_.section2.mydict['c'] == 3
     assert 'subsection3' in cfg_.section3
     assert cfg_.section3.subsection3.baz == 1
+
+
+def test_extended_chars():
+    """Test unicode parsing"""
+    fn = _file_path('extended_chars.cfg')
+    cfg_ = parse_config(fn, encoding='utf-8')
+    # section name with extended chars
+    assert 'äöäööäö' in cfg_
+    assert cfg_.äöäööäö.äööä == 'ääöäöä'
 
 
 def test_config_update():
