@@ -44,7 +44,7 @@ The output is a normal Python dict:
 
     {'Apple': 50, 'Banana': 100}
 
-You can also modify items directly by the attribute syntax:
+You can modify items by the attribute syntax:
 
     config.food.fruits = ['Watermelon', 'Pineapple']
 
@@ -52,40 +52,6 @@ Items inside nested subsections can be accessed similarly:
 
     print(config.drinks.alcoholic.favorite)  # prints 'beer'
 
-## Getting sections and items from a config
-
-`ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further `ConfigContainers` (in case of subsections).
-
-    for item_name, item in config:
-        print(item_name, item)
-
-## Getting comments
-
-You can get the INI file comments for a section as follows:
-
-    config.food._comment
-
-Output:
-
-    'The food section'
-
-You can also get comments for the items. For this, you need to use the `getitem` syntax:
-
-    config.food['calories']._comment
-    
-## Updating and dumping a config
-
-To update values in a config instance using another instance:
-
-    configdot.update_config(config, config_new)
-
-This can be useful e.g. to update a global config with some user-defined values.
-  
-You can dump the config item as text:
-
-    print(configdot.dump_config(config))
-
-This should reproduce the INI file.
 
 ## INI file syntax
 
@@ -122,6 +88,42 @@ Comments are associated with an item, section, or a subsection, and appear befor
 Section headers can include any Unicode word characters. Item names follow the same rules as Python identifiers.
 
 Note that under Windows, the default text encoding is still typically CP1252. Thus, you must supply `encoding='utf-8'` to `parse_config()` if you want to use extended characters in your INI file. 
+
+## Getting sections and items from a config
+
+`ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further `ConfigContainers` (in case of subsections).
+
+    for item_name, item in config:
+        print(item_name, item)
+
+## Getting comments
+
+You can get the INI file comments for a section as follows:
+
+    config.food._comment
+
+Output:
+
+    'The food section'
+
+You can also get comments for the items. For this, you need to use the `getitem` syntax:
+
+    config.food['calories']._comment
+    
+## Updating and dumping a config
+
+To update values in a config instance using another instance:
+
+    configdot.update_config(config, config_new)
+
+This can be useful e.g. to update a global config with some user-defined values.
+  
+You can dump the config item as text:
+
+    print(configdot.dump_config(config))
+
+This should reproduce the INI file.
+
 
 ## Compatibility
 
