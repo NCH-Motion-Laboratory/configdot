@@ -62,7 +62,7 @@ You can also modify items directly by the attribute syntax:
 `ConfigContainer` instances support the iteration protocol. You can get the items from a container as follows. They may be `ConfigItems` or further `ConfigContainers` (in case of subsections).
 
     for item_name, item in config:
-        print(item_name)
+        print(item_name, item)
 
 ## Getting comments
 
