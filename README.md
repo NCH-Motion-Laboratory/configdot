@@ -35,14 +35,6 @@ You can load the file as follows:
     import configdot
     config = configdot.parse_config('demo.ini')
 
-To get a section:
-
-    config.food
-
-Output:
-
-    <ConfigContainer | items: 'fruits', 'calories'>
-
 You can get the items under a section by attribute access:
 
     config.food.calories
@@ -57,7 +49,7 @@ You can also modify items directly by the attribute syntax:
 
 Items inside nested subsections can be accessed similarly:
 
-    print(config.drinks.alcoholic.favorite)
+    print(config.drinks.alcoholic.favorite)  # prints 'beer'
 
 ## Getting sections and items from a config
 
