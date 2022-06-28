@@ -119,7 +119,7 @@ def test_config_update():
     assert 'newvar' in cfg_orig.section2
     assert cfg_orig.section1._comment == 'section1 updated comment'
     assert cfg_orig.section4.subsection4._comment == 'subsection4 new comment'
-    # test not creating new sections or items
+    # test not creating new sections or items (but updating existing ones)
     cfg_orig = parse_config(fn)
     update_config(
         cfg_orig,
@@ -141,6 +141,7 @@ def test_config_update():
         update_comments=False,
     )
     assert 'newvar' in cfg_orig.section2
+    assert cfg_orig.section2['newvar']._comment == 'whole new variable'
     # section3 was not supposed to be updated with new variables
     assert 'var4' not in cfg_orig.section3
     # however updates to existing variables must still succeed

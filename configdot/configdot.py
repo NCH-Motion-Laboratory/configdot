@@ -320,7 +320,7 @@ def _traverse(container):
 
 def _get_attr_by_name(cfg, name_list):
     """Get an item by from a ConfigContainer using a fully qualified attribute name.
-   
+
     name_list is e.g. ['section', 'subsection', 'item'] for section.subsection.item
     """
     name_list = name_list.copy()  # don't mutate the argument
@@ -360,7 +360,7 @@ def update_config(
     """
     for name, item in _traverse(cfg_new):
         name_list = name.split('.')  # e.g. 'section1.subsection1.var'
-        item_name = name_list[-1]   # e.g. 'var'
+        item_name = name_list[-1]  # e.g. 'var'
         # get the parent section for this item in the orig config
         try:
             if parent_name := name_list[:-1]:
@@ -397,7 +397,10 @@ def update_config(
                     isinstance(create_new_items, list)
                     and '.'.join(parent_name) in create_new_items
                 ):
-                    setattr(parent, item_name, item)
+                    item_new = ConfigItem(
+                        name=item_name, value=item.value, comment=item._comment
+                    )
+                    setattr(parent, item_name, item_new)
 
 
 def _dump_config(cfg):
