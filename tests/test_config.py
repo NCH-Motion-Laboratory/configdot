@@ -280,6 +280,15 @@ def test_invalid_subsections():
         parse_config(fn)
 
 
+def test_valid_subsections():
+    fn = _file_path('subsections_valid.cfg')
+    cfg = parse_config(fn)
+    assert 'section1' in cfg
+    assert 'subsubsection1' in cfg.section1.subsection1
+    assert cfg.section1.subsection1.subsubsection1.subsubsubsection1.var1 == 2
+    assert cfg.section1.subsection1.subsubsection2.var1 == 3
+
+
 def test_write_read_cycle():
     for fn in [_file_path('valid.cfg'), _file_path('updates.cfg')]:
         cfg_ = parse_config(fn)
