@@ -53,7 +53,7 @@ Items inside nested subsections can be accessed similarly:
     print(config.drinks.alcoholic.favorite)  # prints 'beer'
 
 
-## INI file syntax
+## Applicable INI file syntax
 
 The INI file consists of section headers, items and comments.
 
