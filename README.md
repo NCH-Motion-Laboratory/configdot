@@ -57,7 +57,17 @@ Items inside nested subsections can be accessed similarly:
 
 The INI file consists of section headers, items and comments.
 
-Section headers are denoted as `[section]`, `[[subsection]]`, `[[[subsubsection]]]` etc. They may be nested arbitrarily deep. Subsections must always occur following a section that is one level lower, e.g. a `[[subsubsection]]` must occur inside (after) a `[section]`.
+Section headers are denoted as `[section]`, `[[subsection]]`, `[[[subsubsection]]]` etc. They may be nested arbitrarily deep. Subsections must occur after a section that is exactly one level higher, e.g. a `[[subsubsection]]` must occur after a `[section]`. The following is allowed:
+
+    [foo]
+    [[bar]]
+    [[[baz]]]]
+    [[bar2]]
+
+The following is not allowed:
+
+    [foo]
+    [[[bar]]]]
 
 Item definitions must be written as `item_name = value`. For the value, the following Python types are supported: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Nested types (e.g. lists of lists) are supported. Items are standalone expressions, i.e. they cannot reference other items defined in the INI file. Items can occur inside any section (and must not be outside of a section).
 
