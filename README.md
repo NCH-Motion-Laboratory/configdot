@@ -31,7 +31,7 @@ favorite = 'Coke'
 favorite = 'beer'
 ```
 
-You can load the INI file as follows:
+You can load it as follows:
 
     import configdot
     config = configdot.parse_config('demo.ini')
