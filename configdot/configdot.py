@@ -53,7 +53,8 @@ class ConfigContainer:
 
     Parameters
     ----------
-    items : dict
+    comment : None | str
+        An optional comment for the container.
     """
 
     def __init__(self, comment=None):
@@ -66,7 +67,7 @@ class ConfigContainer:
         self.__dict__['_comment'] = comment
 
     def __contains__(self, item):
-        """Checks items by name"""
+        """Check items by name"""
         return item in self._items
 
     def __iter__(self):
