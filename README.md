@@ -13,7 +13,7 @@ configdot is a minimalistic INI file parser for configuration of Python programs
 
 ## Basic usage
 
-Consider the example INI file below.
+For an example, consider a 'demo.ini' file with the following contents:
 
 ```
 # The food section
@@ -31,7 +31,7 @@ favorite = 'Coke'
 favorite = 'beer'
 ```
 
-You can load the file as follows:
+You can load the INI file as follows:
 
     import configdot
     config = configdot.parse_config('demo.ini')
