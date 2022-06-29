@@ -10,8 +10,15 @@ from pathlib import Path
 import pytest
 import logging
 import re
+import ast
 
-from configdot import parse_config, update_config, dump_config
+from configdot import (
+    parse_config,
+    update_config,
+    dump_config,
+    ConfigContainer,
+    ConfigItem,
+)
 from configdot.utils import (
     RE_COMMENT,
     RE_SECTION_HEADER,
@@ -25,6 +32,61 @@ logger = logging.getLogger(__name__)
 
 def _file_path(filename):
     return Path('testdata') / filename
+
+
+def test_configcontainer():
+    """Tests for the ConfigContainer class"""
+    cc = ConfigContainer()
+    # create ConfigItems implicitly
+    cc.foo = 1
+    assert cc.foo == 1
+    assert 'foo' in cc
+    assert isinstance(cc['foo'], ConfigItem)
+    # modify a ConfigItem
+    cc.foo = 2
+    assert cc.foo == 2
+    assert isinstance(cc['foo'], ConfigItem)
+    ci = ConfigItem('bar', value=3, comment='test comment')
+    # assign an explicitly created ConfigItem
+    cc.bar = ci
+    assert cc.bar == 3
+    assert cc['bar']._comment == 'test comment'
+    # in such an assigment, the attribute must match the item name
+    with pytest.raises(ValueError):
+        cc['baz'] = ci
+    # create a subcontainer
+    ccsub = ConfigContainer(comment='section comment')
+    cc.sub = ccsub
+    assert isinstance(cc.sub, ConfigContainer)
+    assert cc.sub._comment == 'section comment'
+    cc.sub.baz = 'new item'
+    assert cc.sub.baz == 'new item'
+    assert isinstance(cc.sub['baz'], ConfigItem)
+    # replace a container with another container
+    ccsub2 = ConfigContainer(comment='another section')
+    cc.sub = ccsub2
+    assert cc.sub._comment == 'another section'
+    # implicitly replace the container with an item
+    cc.sub = 1
+    assert isinstance(cc['sub'], ConfigItem)
+    assert cc.sub == 1
+
+
+def test_configitem():
+    """Tests for the ConfigItem class"""
+    with pytest.raises(ValueError):
+        ConfigItem(1)
+    ci = ConfigItem('bar', 2)
+    assert ci.name == 'bar'
+    assert ci.value == 2
+    assert ci.literal_value == '2'
+    assert ci.item_def == 'bar = 2'
+    # item with a dict value
+    di = {1: None, 2: 2}
+    ci = ConfigItem('bar', di)
+    # extract the literal value and evaluate it
+    dival = ast.literal_eval(ci.literal_value)
+    assert dival == di
 
 
 def test_re_comment():

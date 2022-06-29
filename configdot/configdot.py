@@ -6,15 +6,20 @@ Definitions for nested config objects.
 @author: Jussi (jnu@iki.fi)
 """
 import pprint
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigItem:
     """A configuration item.
-    
+
     Stores name, comment and a value which may be of any Python type.
     """
 
-    def __init__(self, name=None, value=None, comment=None):
+    def __init__(self, name, value=None, comment=None):
+        if not isinstance(name, str):
+            raise ValueError('the item name must be a string')
         self._comment = '' if comment is None else comment
         self.name = name
         self.value = value
@@ -44,20 +49,20 @@ class ConfigContainer:
     container.item to get Python values stored in the items. If you need access
     to the actual ConfigItem instances, use the syntax container['item'].
     Setting attributes (container.item = value) is also reimplemented to
-    implicitly create new ConfigItems.
+    implicitly create new ConfigItem instances when value is a Python type.
 
     Parameters
     ----------
     items : dict
     """
 
-    def __init__(self, items=None, comment=None):
-        # need to modify __dict__ directly to avoid infinite __setattr__ loop
-        if items is None:
-            items = dict()
+    def __init__(self, comment=None):
         if comment is None:
             comment = ''
-        self.__dict__['_items'] = items
+        # modifying attributes of self would invoke __setattr__ which is
+        # reimplemented below, thus to modify them directly we need to do it via
+        # self.__dict__
+        self.__dict__['_items'] = dict()
         self.__dict__['_comment'] = comment
 
     def __contains__(self, item):
@@ -94,14 +99,25 @@ class ConfigContainer:
 
     def __setattr__(self, attr, value):
         """Set attribute"""
-        if isinstance(value, ConfigItem) or isinstance(value, ConfigContainer):
-            # replace an existing section/item
+        if isinstance(value, ConfigItem):
+            if value.name != attr:
+                raise ValueError(
+                    'attribute name should match the name of the ConfigItem'
+                )
+            self.__dict__['_items'][attr] = value
+        elif isinstance(value, ConfigContainer):
             self.__dict__['_items'][attr] = value
         elif attr == '_comment':
             self.__dict__['_comment'] = value
         elif attr in self._items:
-            # update value of existing item (syntax sec.item = value)
-            self.__dict__['_items'][attr].value = value
+            if isinstance(self._items[attr], ConfigItem):
+                # implicitly update value of an existing ConfigItem
+                self.__dict__['_items'][attr].value = value
+            elif isinstance(self._items[attr], ConfigContainer):
+                # replace an existing container with an implicitly created ConfigItem
+                # we currently accept this but log a warning
+                logger.warning('a subcontainer by the name {attr} exists')
+                self.__dict__['_items'][attr] = ConfigItem(name=attr, value=value)
         else:
             # implicitly create a new ConfigItem (syntax sec.item = value)
             self.__dict__['_items'][attr] = ConfigItem(name=attr, value=value)
