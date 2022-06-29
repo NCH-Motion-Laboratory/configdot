@@ -9,7 +9,10 @@ import pprint
 
 
 class ConfigItem:
-    """Holds data for a config item"""
+    """A configuration item.
+    
+    Stores name, comment and a value which may be of any Python type.
+    """
 
     def __init__(self, name=None, value=None, comment=None):
         self._comment = '' if comment is None else comment
@@ -34,7 +37,19 @@ class ConfigItem:
 
 
 class ConfigContainer:
-    """Holds config items (ConfigContainer or ConfigItem instances)"""
+    """A container for ConfigItem instances, or other ConfigContainers.
+
+    Attribute access (container.item) is reimplemented in to directly return
+    values of ConfigItem instances. This makes it possible to use the syntax
+    container.item to get Python values stored in the items. If you need access
+    to the actual ConfigItem instances, use the syntax container['item'].
+    Setting attributes (container.item = value) is also reimplemented to
+    implicitly create new ConfigItems.
+
+    Parameters
+    ----------
+    items : dict
+    """
 
     def __init__(self, items=None, comment=None):
         # need to modify __dict__ directly to avoid infinite __setattr__ loop
@@ -72,6 +87,10 @@ class ConfigContainer:
     def __getitem__(self, item):
         """Returns an item"""
         return self._items[item]
+
+    def __setitem__(self, item, value):
+        # delegate to __setattr__ which handles the various item types
+        self.__setattr__(item, value)
 
     def __setattr__(self, attr, value):
         """Set attribute"""
