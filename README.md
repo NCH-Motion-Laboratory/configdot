@@ -13,7 +13,7 @@ configdot is a minimalistic INI file parser for configuration of Python programs
 
 ## Basic usage
 
-For an example, consider a 'demo.ini' file with the following contents:
+For an example, consider a `demo.ini` file with the following contents:
 
 ```
 # The food section
