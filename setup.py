@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='configdot',
-    version='0.13',
+    version='0.144',
     description='Config object with attribute access and INI parser',
     author='Jussi Nurminen',
     author_email='jnu@iki.fi',
