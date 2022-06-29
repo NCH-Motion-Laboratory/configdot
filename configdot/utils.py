@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse INI files into nested config objects.
+Utils for parsing INI files and handling config objects.
 
 @author: Jussi (jnu@iki.fi)
 """
@@ -247,15 +247,14 @@ def update_config(
         original config.
     create_new_items : bool | list
         Whether to create config items that don't exist in the original config.
-        If True, new items may be created under any section. If list, must be a
-        list of names for the sections where creating new items is allowed,
+        If True, new items may be created under any section. If a list, must be
+        a list of names for the sections where creating new items is allowed,
         e.g. ['section1.subsection1'].
     update_comments : bool
         If True, comments will be updated too.
-
-    Note that this does not create a full copy, but may create references to
-    items in the new config.
     """
+    if not (isinstance(create_new_items, bool) or isinstance(create_new_items, list)):
+        raise TypeError('invalid create_new_items argument (must be list or bool)')
     for name, item in _traverse(cfg_new):
         name_list = name.split('.')  # e.g. 'section1.subsection1.var'
         item_name = name_list[-1]  # e.g. 'var'
@@ -275,18 +274,18 @@ def update_config(
             continue
         try:
             # try to find the item in the original config
-            # if unsuccessful, this will throw a KeyError
+            # if unsuccessful, this will raise a KeyError
             item_orig = _get_attr_by_name(cfg_orig, name_list)
             if update_comments:
                 item_orig._comment = item._comment
-            # ConfigContainers don't need updating, except for the comments;
-            # their contents will be updated recursively
             if isinstance(item_orig, ConfigItem):
                 setattr(parent, item_name, item)
+            # ConfigContainers don't need updating, except for the comments;
+            # their contents will be updated separately
         except KeyError:
             # item does not exist in the original config
             if isinstance(item, ConfigContainer) and create_new_sections:
-                # create new empty container; using the containger from cfg_new
+                # create new empty container; reusing the container from cfg_new
                 # would also copy its items, which we may not want
                 section = ConfigContainer(comment=item._comment)
                 setattr(parent, item_name, section)

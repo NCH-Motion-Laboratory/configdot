@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Parse INI files into nested config objects.
+Definitions for nested config objects.
 
 
 @author: Jussi (jnu@iki.fi)
