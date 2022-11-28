@@ -13,7 +13,7 @@ setup(
     author='Jussi Nurminen',
     author_email='jnu@iki.fi',
     license='GPLv3',
-    url='https://github.com/jjnurminen/configdot',
+    url='https://github.com/NCH-Motion-Laboratory/configdot',
     packages=find_packages(),
     include_package_data=True,
 )
