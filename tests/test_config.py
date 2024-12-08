@@ -178,13 +178,15 @@ def test_config_update():
     cfg_new = parse_config(fn_new)
     # test not updating comments
     update_config(cfg_orig, cfg_new, update_comments=False)
+    assert cfg_orig.section1['var1']._comment == 'this is var1'
     assert cfg_orig.section1.var1 == 2
     assert 'section4' in cfg_orig
     assert 'newvar' in cfg_orig.section2
     assert cfg_orig.section1._comment == 'section1 comment'
     cfg_orig = parse_config(fn)
-    update_config(cfg_orig, cfg_new, update_comments=True)
     # test updating comments
+    update_config(cfg_orig, cfg_new, update_comments=True)
+    assert cfg_orig.section1['var1']._comment == 'this is var1 updated'
     assert cfg_orig.section1.var1 == 2
     assert 'section4' in cfg_orig
     assert 'newvar' in cfg_orig.section2

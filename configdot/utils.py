@@ -228,7 +228,7 @@ def _get_attr_by_name(cfg, name_list):
 
 
 def update_config(
-    cfg_orig,
+    cfg_to_update,
     cfg_new,
     create_new_sections=True,
     create_new_items=True,
@@ -238,7 +238,7 @@ def update_config(
 
     Parameters
     ----------
-    cfg_orig : ConfigContainer
+    cfg_to_update : ConfigContainer
         The original config (to be updated).
     cfg_new : ConfigContainer
         The config that contains the updated data.
@@ -255,16 +255,16 @@ def update_config(
     """
     if not (isinstance(create_new_items, bool) or isinstance(create_new_items, list)):
         raise TypeError('invalid create_new_items argument (must be list or bool)')
-    for name, item in _traverse(cfg_new):
+    for name, item_new in _traverse(cfg_new):
         name_list = name.split('.')  # e.g. 'section1.subsection1.var'
         item_name = name_list[-1]  # e.g. 'var'
         # get the parent section for this item in the orig config
         try:
             if parent_name := name_list[:-1]:
-                parent = _get_attr_by_name(cfg_orig, parent_name)
+                parent = _get_attr_by_name(cfg_to_update, parent_name)
             else:
                 # if parent name is empty, we're at the root container
-                parent = cfg_orig
+                parent = cfg_to_update
         except KeyError:
             # item orphaned, since new sections cannot be created
             logger.warning(
@@ -275,27 +275,30 @@ def update_config(
         try:
             # try to find the item in the original config
             # if unsuccessful, this will raise a KeyError
-            item_orig = _get_attr_by_name(cfg_orig, name_list)
-            if update_comments:
-                item_orig._comment = item._comment
-            if isinstance(item_orig, ConfigItem):
-                setattr(parent, item_name, item)
+            item_to_update = _get_attr_by_name(cfg_to_update, name_list)
             # ConfigContainers don't need updating, except for the comments;
             # their contents will be updated separately
+            if isinstance(item_new, ConfigContainer):
+                if update_comments:
+                    item_to_update._comment = item_new._comment    
+            else:
+                comment = item_new._comment if update_comments else item_to_update._comment
+                item_updated = ConfigItem(item_new.name, item_new.value, comment)
+                setattr(parent, item_name, item_updated)
         except KeyError:
             # item does not exist in the original config
-            if isinstance(item, ConfigContainer) and create_new_sections:
+            if isinstance(item_new, ConfigContainer) and create_new_sections:
                 # create new empty container; reusing the container from cfg_new
                 # would also copy its items, which we may not want
-                section = ConfigContainer(comment=item._comment)
+                section = ConfigContainer(comment=item_new._comment)
                 setattr(parent, item_name, section)
-            elif isinstance(item, ConfigItem):
+            elif isinstance(item_new, ConfigItem):
                 if create_new_items is True or (
                     isinstance(create_new_items, list)
                     and '.'.join(parent_name) in create_new_items
                 ):
                     item_new = ConfigItem(
-                        name=item_name, value=item.value, comment=item._comment
+                        name=item_name, value=item_new.value, comment=item_new._comment
                     )
                     setattr(parent, item_name, item_new)
 
